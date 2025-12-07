@@ -48,3 +48,16 @@ export interface AnalysisState {
   result: string | null;
   error: string | null;
 }
+
+export interface AnalysisRecord {
+  id: string;
+  createdAt: string;
+  patientAge?: string;
+  patientSex?: string;
+  duration?: string;
+  conditions?: string;
+  medications?: string;
+  triageLevel?: string;
+  summaryQuick?: string;
+  markdown: string;
+}

@@ -15,15 +15,18 @@ import {
   ArrowRight,
   Volume2,
   StopCircle,
-  FileDown
+  FileDown,
+  ArrowLeft
 } from 'lucide-react';
-import { Language, PatientData } from '../types';
-import { jsPDF } from 'jspdf';
+import { Language, PatientData, AnalysisRecord } from '../types';
+import { generatePDF } from '../utils/pdfGenerator';
 
 interface AnalysisResultProps {
   markdown: string;
   language?: Language;
   patientData?: PatientData;
+  recordId?: string; // If viewing a historical record
+  onBack?: () => void; // Function to go back if viewing history
 }
 
 interface Section {
@@ -32,29 +35,24 @@ interface Section {
   icon: React.ReactNode;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, patientData }) => {
-  // Default all sections to collapsed (false)
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, patientData, recordId, onBack }) => {
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
 
   useEffect(() => {
-    // Check browser support for SpeechSynthesis
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       setCanSpeak(true);
-      // Ensure voices are loaded
       window.speechSynthesis.getVoices();
     }
     
     return () => {
-      // Cleanup: Stop speaking when component unmounts
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     };
   }, []);
 
-  // Parse Markdown into Sections
   const parseMarkdown = (text: string): Section[] => {
     const lines = text.split('\n');
     const sections: Section[] = [];
@@ -113,7 +111,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
 
   const sections = parseMarkdown(markdown);
 
-  // Extract Triage Level
   const getTriageLevel = () => {
     const triageSection = sections.find(s => s.title.toLowerCase().includes('triage'));
     if (!triageSection) return 'unknown';
@@ -127,17 +124,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
 
   const triageLevel = getTriageLevel();
 
-  // Extract Summary Snippet & Next Steps for Quick View
   const summarySection = sections.find(s => s.title.toLowerCase().includes('summary') && !s.title.toLowerCase().includes('handover'));
   const nextStepsSection = sections.find(s => s.title.toLowerCase().includes('next') || s.title.toLowerCase().includes('can do'));
   
-  // Filter sections for the bottom accordion (exclude Triage and Safety)
   const accordionSections = sections.filter(s => {
       const t = s.title.toLowerCase();
       return !t.includes('triage') && !t.includes('safety');
   });
 
-  // Helper to extract top bullets
   const getQuickActions = () => {
       if (!nextStepsSection) return [];
       return nextStepsSection.content
@@ -147,10 +141,8 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
   };
   const quickActions = getQuickActions();
 
-  // Helper to get first paragraph of summary
   const getSummarySnippet = () => {
       if (!summarySection) return null;
-      // Find first non-empty line that isn't a list item
       const line = summarySection.content.find(l => l.trim().length > 0 && !l.trim().startsWith('-'));
       return line ? line.replace(/\*\*/g, '') : "Review the full summary below.";
   };
@@ -159,6 +151,13 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
   const toggleSection = (index: number) => {
     setExpandedSections(prev => ({ ...prev, [index]: !prev[index] }));
   };
+
+  const cleanText = (text: string) => text
+    .replace(/\*\*/g, '')           
+    .replace(/__/g, '')             
+    .replace(/\[.*?\]\(.*?\)/g, '') 
+    .replace(/^\s*[-*•]\s+/gm, '')  
+    .trim();
 
   const renderContent = (lines: string[]) => {
     return lines.map((line, i) => {
@@ -189,7 +188,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
     });
   };
 
-  // Helper to map UI language to BCP-47 codes
   const mapLanguageToBCP47 = (lang: string | undefined): string => {
     switch (lang) {
       case 'Hindi': return 'hi-IN';
@@ -206,33 +204,19 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
     }
   };
 
-  const cleanText = (text: string) => text
-    .replace(/\*\*/g, '')           // Remove bold
-    .replace(/__/g, '')             // Remove italics
-    .replace(/\[.*?\]\(.*?\)/g, '') // Remove links
-    .replace(/^\s*[-*•]\s+/gm, '')  // Remove list bullets
-    .trim();
-
-  // Helper to extract clean text specifically for speech
   const extractSpeakableText = (): string => {
     let textParts: string[] = [];
-
-    // 1. Add Triage Level Context
     if (triageLevel === 'emergency') textParts.push("Emergency Recommendation. Immediate medical care is recommended.");
     else if (triageLevel === 'urgent') textParts.push("Medical Attention Advised. You should plan to see a doctor soon.");
     else if (triageLevel === 'mild') textParts.push("Likely Mild Condition. Self-care may be sufficient.");
 
-    // 2. Add Summary
     if (summarySection) {
-      // Join all lines in summary, not just the first one
       const summaryText = summarySection.content.join('. ');
       textParts.push("Summary: " + cleanText(summaryText));
     }
 
-    // 3. Add Next Steps
     if (nextStepsSection) {
       textParts.push("Next steps: ");
-      // Only read the bullet points, ignore intro text
       const bullets = nextStepsSection.content.filter(line => line.trim().match(/^[-*]|\d+\./));
       if (bullets.length > 0) {
         textParts.push(cleanText(bullets.join('. ')));
@@ -246,22 +230,14 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
 
   const handleSpeak = () => {
     if (!canSpeak) return;
-
-    window.speechSynthesis.cancel(); // Stop any previous speech
-
+    window.speechSynthesis.cancel();
     const speakableText = extractSpeakableText();
     const utterance = new SpeechSynthesisUtterance(speakableText);
-    
-    // Set language
     const langCode = mapLanguageToBCP47(language?.toString());
-    if (langCode !== 'auto') {
-      utterance.lang = langCode;
-    }
-
+    if (langCode !== 'auto') utterance.lang = langCode;
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-
     window.speechSynthesis.speak(utterance);
   };
 
@@ -272,114 +248,35 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
     }
   };
 
-  // PDF Generation Function
   const handleDownloadPDF = () => {
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 15;
-      const contentWidth = pageWidth - (margin * 2);
-      let yPos = 20;
-
-      // 1. Title
-      doc.setFontSize(18);
-      doc.setTextColor(13, 148, 136); // Teal color
-      doc.text("MediAI – Health Triage Report", margin, yPos);
-      yPos += 8;
-
-      // 2. Date
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, margin, yPos);
-      yPos += 12;
-
-      // 3. Patient Details
-      if (patientData) {
-        doc.setFontSize(11);
-        doc.setTextColor(0);
-        doc.setFont("helvetica", "bold");
-        doc.text("Patient Basics:", margin, yPos);
-        yPos += 6;
-        
-        doc.setFont("helvetica", "normal");
-        const basics = [
-          `Age/Sex: ${patientData.age}, ${patientData.sex}`,
-          `Duration: ${patientData.duration}`,
-          `Conditions: ${patientData.conditions || "None"}`,
-          `Medications: ${patientData.medications || "None"}`
-        ];
-        
-        basics.forEach(line => {
-          doc.text(line, margin + 5, yPos);
-          yPos += 6;
-        });
-        yPos += 6;
-      }
-
-      // 4. Triage Level
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      if (triageLevel === 'emergency') doc.setTextColor(220, 38, 38); // Red
-      else if (triageLevel === 'urgent') doc.setTextColor(234, 88, 12); // Orange
-      else if (triageLevel === 'mild') doc.setTextColor(22, 163, 74); // Green
-      else doc.setTextColor(0);
-
-      const triageText = triageLevel === 'emergency' ? 'EMERGENCY - Seek Immediate Care' :
-                         triageLevel === 'urgent' ? 'See Doctor Soon - Medical Attention Advised' :
-                         triageLevel === 'mild' ? 'Likely Mild - Self-Care Sufficient' :
-                         'Triage Analysis Complete';
-      doc.text(triageText, margin, yPos);
-      yPos += 10;
-      doc.setTextColor(0); // Reset color
-
-      // Helper to add section to PDF
-      const addSectionToPDF = (title: string, content: string) => {
-        // Check for page break
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-        
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text(title, margin, yPos);
-        yPos += 7;
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const splitText = doc.splitTextToSize(content, contentWidth);
-        doc.text(splitText, margin, yPos);
-        yPos += (splitText.length * 5) + 8;
-      };
-
-      // 5. Quick Summary
-      if (summarySnippet) {
-        addSectionToPDF("Summary", cleanText(summarySnippet));
-      }
-
-      // 6. Recommended Actions
-      if (quickActions.length > 0) {
-        addSectionToPDF("Recommended Actions", quickActions.map(a => `• ${cleanText(a)}`).join('\n'));
-      }
-
-      // 7. Doctor Handover
-      const doctorSection = sections.find(s => s.title.toLowerCase().includes('doctor') || s.title.toLowerCase().includes('handover'));
-      if (doctorSection) {
-        const text = doctorSection.content.join('\n');
-        addSectionToPDF("Doctor Handover Summary", cleanText(text));
-      }
-
-      doc.save("MediAI-report.pdf");
-
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      alert("Could not generate PDF. Please try again.");
-    }
+    // Construct record-like object for PDF generator
+    const record: AnalysisRecord = {
+      id: recordId || 'live',
+      createdAt: new Date().toISOString(),
+      patientAge: patientData?.age,
+      patientSex: patientData?.sex?.toString(),
+      duration: patientData?.duration,
+      conditions: patientData?.conditions,
+      medications: patientData?.medications,
+      triageLevel: triageLevel,
+      markdown: markdown
+    };
+    generatePDF(record);
   };
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
+      {/* Back Button (Only for History Mode) */}
+      {onBack && (
+        <button 
+          onClick={onBack}
+          className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-2"
+        >
+          <ArrowLeft size={18} className="mr-1" /> Back to Dashboard
+        </button>
+      )}
+
       {/* QUICK VIEW CARD */}
       <div className={`rounded-2xl border shadow-sm overflow-hidden transition-all duration-500
         ${triageLevel === 'emergency' ? 'bg-red-50 border-red-200' : 
@@ -456,7 +353,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
 
         {/* Quick Summary Body */}
         <div className="p-5 bg-white/60">
-             {/* Topline Text */}
              {summarySnippet && (
                 <div className="mb-5">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center">
@@ -468,7 +364,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
                 </div>
              )}
 
-             {/* Action Bullets */}
              {quickActions.length > 0 && (
                  <div className="bg-white/80 rounded-xl p-4 border border-black/5 shadow-sm">
                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center">
@@ -490,22 +385,17 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
         </div>
       </div>
 
-      {/* PDF DOWNLOAD BUTTON */}
       <button 
         onClick={handleDownloadPDF}
         className="w-full flex items-center justify-center space-x-2 py-3 bg-white border border-slate-300 text-slate-700 rounded-xl shadow-sm hover:bg-slate-50 hover:text-teal-600 hover:border-teal-200 transition-all group"
       >
         <FileDown size={18} className="group-hover:scale-110 transition-transform" />
-        <span className="font-semibold text-sm">Download PDF Report</span>
+        <span className="font-semibold text-sm">Download Full Report (PDF)</span>
       </button>
 
-      {/* DETAILED SECTIONS ACCORDION */}
       <div className="space-y-3">
         {accordionSections.map((section, idx) => {
-          // Identify original index to maintain state key consistency if needed, or just use mapped idx
-          // Using mapped idx is fine here as the list is static after render
           const isExpanded = expandedSections[idx] === true; 
-          
           return (
             <div key={idx} className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-md">
               <button 
@@ -523,7 +413,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
                 </div>
               </button>
               
-              {/* Accordion Content */}
               <div 
                 className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                   isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
@@ -542,7 +431,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
         })}
       </div>
 
-      {/* Footer Disclaimer */}
       <div className="flex items-start p-4 bg-slate-50 rounded-xl text-xs text-slate-500 border border-slate-200 mt-2">
          <AlertCircle className="mr-2 flex-shrink-0 text-slate-400" size={16} />
          <p>Disclaimer: This analysis is generated by AI (Gemini 3 Pro) and may contain errors. Do not rely on it for medical decisions. Always consult a qualified healthcare professional.</p>
