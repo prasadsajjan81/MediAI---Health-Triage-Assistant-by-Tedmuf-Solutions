@@ -1,5 +1,5 @@
 {
-  "name": "MediAI - Health Triage Assistant",
+  "name": "Vishwasini - MediAI - Health Triage Assistant",
   "description": "A multimodal health assistant that analyzes symptoms, images, and reports to provide triage guidance and optional Ayurvedic perspectives. Powered by Gemini 3 Pro.",
   "requestFramePermissions": [
     "microphone"

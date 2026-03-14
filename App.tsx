@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import PatientForm from './components/PatientForm';
 import FileUpload from './components/FileUpload';
 import AudioRecorder from './components/AudioRecorder';
@@ -42,7 +43,11 @@ export default function App() {
     try {
       const savedHistory = localStorage.getItem('mediAI-history');
       if (savedHistory) {
-        setHistory(JSON.parse(savedHistory));
+        setHistory(JSON.parse(savedHistory).map((r: any) => ({
+          ...r,
+          summaryQuick: r.summaryQuick?.replace(/MediAI/g, 'Vishwasini - MediAI'),
+          markdown: r.markdown?.replace(/MediAI/g, 'Vishwasini - MediAI')
+        })));
       }
     } catch (e) {
       console.error("Failed to load history", e);
@@ -175,7 +180,7 @@ export default function App() {
               <div>
                 <h3 className="font-semibold text-amber-800 text-sm">Medical Disclaimer</h3>
                 <p className="text-amber-700 text-sm mt-1">
-                  MediAI is an AI tool for informational purposes only. It is <strong>not a doctor</strong>. 
+                  Vishwasini - MediAI is an AI tool for informational purposes only. It is <strong>not a doctor</strong>. 
                   If you are experiencing a medical emergency, call emergency services immediately.
                 </p>
               </div>
@@ -242,7 +247,7 @@ export default function App() {
                 ) : (
                   <>
                     <Sparkles size={24} />
-                    <span>Analyze with MediAI</span>
+                    <span>Analyze with Vishwasini - MediAI</span>
                   </>
                 )}
               </button>
@@ -301,6 +306,7 @@ export default function App() {
         )}
 
       </main>
+      <Footer />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { PatientData, FileData, AudioData } from "../types";
 
 const SYSTEM_INSTRUCTION = `
-You are **MediAI**, an advanced AI health triage and information assistant. 
+You are **Vishwasini - MediAI**, an advanced AI health triage and information assistant. 
 Your goal is to analyze patient symptoms, details, and optional visual data (images/reports) to provide a structured, safe, and informative summary.
 
 **CRITICAL SAFETY RULES:**
