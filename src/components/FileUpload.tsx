@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+// File Upload Component
 import { Camera, FileText, X, Upload, Image as ImageIcon } from 'lucide-react';
 import { FileData } from '../types';
 import { processFile, isValidImage, isValidDocument } from '../utils/fileHelpers';

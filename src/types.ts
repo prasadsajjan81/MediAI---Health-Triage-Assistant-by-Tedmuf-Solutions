@@ -1,3 +1,4 @@
+// Global Type Definitions
 export enum Gender {
   Male = 'Male',
   Female = 'Female',
