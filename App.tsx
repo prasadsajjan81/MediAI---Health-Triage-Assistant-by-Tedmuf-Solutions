@@ -236,7 +236,7 @@ export default function App() {
               <button
                 onClick={handleAnalyze}
                 disabled={analysis.loading}
-                className={`w-full py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0
+                className={`w-full max-w-md mx-auto py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0
                   ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600'}`}
               >
                 {analysis.loading ? (
@@ -266,7 +266,7 @@ export default function App() {
                     setAnalysis({ loading: false, result: null, error: null });
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="mt-8 w-full py-4 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+                  className="mt-8 w-full max-w-md mx-auto py-4 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center"
                 >
                   Start New Analysis
                 </button>
