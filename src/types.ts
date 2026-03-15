@@ -51,6 +51,7 @@ export interface AnalysisState {
 
 export interface AnalysisRecord {
   id: string;
+  userId?: string;
   createdAt: string;
   patientAge?: string;
   patientSex?: string;

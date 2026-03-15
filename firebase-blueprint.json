@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile and subscription information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "User email" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "User role" },
+        "subscriptionStatus": { "type": "string", "enum": ["free", "active", "expired"], "description": "Current subscription status" },
+        "subscriptionEndDate": { "type": "string", "format": "date-time", "description": "When the subscription expires" },
+        "freeTestsRemaining": { "type": "integer", "description": "Number of free tests left (default 1)" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Analysis": {
+      "title": "Health Analysis",
+      "description": "Stores health analysis records for patients",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "UID of the user who performed the analysis" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "patientAge": { "type": "string" },
+        "patientSex": { "type": "string" },
+        "duration": { "type": "string" },
+        "conditions": { "type": "string" },
+        "medications": { "type": "string" },
+        "triageLevel": { "type": "string" },
+        "summaryQuick": { "type": "string" },
+        "markdown": { "type": "string" }
+      },
+      "required": ["userId", "createdAt", "markdown"]
+    },
+    "Payment": {
+      "title": "Payment Record",
+      "description": "Stores Razorpay payment details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "paymentId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "paymentId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/analyses/{analysisId}": {
+      "schema": "Analysis",
+      "description": "Health analysis records"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment history"
+    }
+  }
+}

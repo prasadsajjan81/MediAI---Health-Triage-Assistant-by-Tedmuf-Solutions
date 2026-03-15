@@ -6,10 +6,15 @@ import FileUpload from './components/FileUpload';
 import AudioRecorder from './components/AudioRecorder';
 import AnalysisResult from './components/AnalysisResult';
 import DoctorDashboard from './components/DoctorDashboard';
+import AuthModal from './components/AuthModal';
+import SubscriptionModal from './components/SubscriptionModal';
 import { PatientData, Gender, FileData, AnalysisState, Language, AudioData, AnalysisRecord } from './types';
 import { analyzeHealthData } from './services/geminiService';
-import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope } from 'lucide-react';
+import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown } from 'lucide-react';
 import { generatePDF } from './utils/pdfGenerator';
+import { useAuth } from './AuthContext';
+import { db } from './firebase';
+import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
 
 const INITIAL_PATIENT_DATA: PatientData = {
   age: '',
@@ -23,6 +28,7 @@ const INITIAL_PATIENT_DATA: PatientData = {
 };
 
 export default function App() {
+  const { user, profile, loading: authLoading, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'patient' | 'doctor'>('patient');
   const [patientData, setPatientData] = useState<PatientData>(INITIAL_PATIENT_DATA);
   const [symptomFiles, setSymptomFiles] = useState<FileData[]>([]);
@@ -37,28 +43,43 @@ export default function App() {
 
   const [history, setHistory] = useState<AnalysisRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<AnalysisRecord | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
 
-  // Load history from local storage on mount
+  // Load history from Firestore
   useEffect(() => {
-    try {
-      const savedHistory = localStorage.getItem('mediAI-history');
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory).map((r: any) => ({
-          ...r,
-          summaryQuick: r.summaryQuick?.replace(/MediAI/g, 'Vishwasini - MediAI'),
-          markdown: r.markdown?.replace(/MediAI/g, 'Vishwasini - MediAI')
-        })));
-      }
-    } catch (e) {
-      console.error("Failed to load history", e);
+    if (!user) {
+      setHistory([]);
+      return;
     }
-  }, []);
+
+    let q;
+    if (isAdmin && activeTab === 'doctor') {
+      q = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(100));
+    } else {
+      q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    }
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const records = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as AnalysisRecord[];
+      setHistory(records);
+    }, (error) => {
+      console.error("Firestore history error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user, isAdmin, activeTab]);
 
   const handleDataChange = (field: keyof PatientData, value: any) => {
     setPatientData(prev => ({ ...prev, [field]: value }));
   };
 
-  const saveAnalysisRecord = (markdownResult: string) => {
+  const saveAnalysisRecord = async (markdownResult: string) => {
+    if (!user) return;
+
     try {
       // 1. Extract Triage Level
       let triageLevel = "Unknown";
@@ -90,8 +111,8 @@ export default function App() {
         }
       }
 
-      const newRecord: AnalysisRecord = {
-        id: crypto.randomUUID(),
+      const newRecord = {
+        userId: user.uid,
         createdAt: new Date().toISOString(),
         patientAge: patientData.age,
         patientSex: patientData.sex,
@@ -103,9 +124,15 @@ export default function App() {
         markdown: markdownResult
       };
 
-      const updatedHistory = [newRecord, ...history];
-      setHistory(updatedHistory);
-      localStorage.setItem('mediAI-history', JSON.stringify(updatedHistory));
+      await addDoc(collection(db, 'analyses'), newRecord);
+
+      // Update free tests remaining if applicable
+      if (profile && profile.subscriptionStatus === 'free') {
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+          freeTestsRemaining: Math.max(0, profile.freeTestsRemaining - 1)
+        });
+      }
       
     } catch (e) {
       console.error("Error saving analysis record", e);
@@ -113,6 +140,16 @@ export default function App() {
   };
 
   const handleAnalyze = async () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (profile?.subscriptionStatus === 'free' && profile.freeTestsRemaining <= 0) {
+      setIsSubscriptionModalOpen(true);
+      return;
+    }
+
     if (!patientData.age) {
       setAnalysis({ ...analysis, error: "Please provide your Age." });
       return;
@@ -128,7 +165,7 @@ export default function App() {
       const result = await analyzeHealthData(patientData, symptomFiles, reportFile, audioData);
       setAnalysis({ loading: false, result, error: null });
       
-      saveAnalysisRecord(result);
+      await saveAnalysisRecord(result);
 
       setTimeout(() => {
         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -147,9 +184,21 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <Loader2 className="animate-spin text-teal-600 mb-4" size={48} />
+        <p className="text-slate-600 font-medium">Initializing Vishwasini - MediAI...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-20 bg-slate-50">
-      <Header />
+      <Header 
+        onOpenAuth={() => setIsAuthModalOpen(true)} 
+        onOpenSubscription={() => setIsSubscriptionModalOpen(true)} 
+      />
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         
@@ -163,7 +212,15 @@ export default function App() {
               <User size={16} className="mr-2" /> Patient View
             </button>
             <button 
-              onClick={() => setActiveTab('doctor')}
+              onClick={() => {
+                if (!user) {
+                  setIsAuthModalOpen(true);
+                } else if (!isAdmin) {
+                  alert("Access Denied: Only administrators can access the Doctor Panel.");
+                } else {
+                  setActiveTab('doctor');
+                }
+              }}
               className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
             >
               <Stethoscope size={16} className="mr-2" /> Doctor Panel
@@ -185,6 +242,27 @@ export default function App() {
                 </p>
               </div>
             </div>
+
+            {/* Subscription Status Card */}
+            {user && profile?.subscriptionStatus === 'free' && (
+              <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-2xl p-6 text-white shadow-lg shadow-teal-600/20 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-white/20 rounded-xl">
+                    <Crown size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">Free Plan Active</h3>
+                    <p className="text-teal-50 opacity-90 text-sm">You have <strong>{profile.freeTestsRemaining}</strong> free analysis remaining.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsSubscriptionModalOpen(true)}
+                  className="px-6 py-2 bg-white text-teal-600 font-bold rounded-xl hover:bg-teal-50 transition-all transform hover:scale-105"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
 
             <div className={`transition-all duration-500 space-y-8 ${analysis.result ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
               <PatientForm data={patientData} onChange={handleDataChange} />
@@ -246,8 +324,8 @@ export default function App() {
                   </>
                 ) : (
                   <>
-                    <Sparkles size={24} />
-                    <span>Analyze with Vishwasini - MediAI</span>
+                    {!user ? <Lock size={20} className="mr-2 opacity-50" /> : <Sparkles size={24} />}
+                    <span>{user ? 'Analyze with Vishwasini - MediAI' : 'Sign In to Analyze'}</span>
                   </>
                 )}
               </button>
@@ -276,12 +354,12 @@ export default function App() {
         )}
 
         {/* --- DOCTOR TAB --- */}
-        {activeTab === 'doctor' && (
+        {activeTab === 'doctor' && isAdmin && (
           <div className="animate-in fade-in duration-500">
             {selectedRecord ? (
               <AnalysisResult 
                 markdown={selectedRecord.markdown}
-                language={Language.English} // History view defaults to what's in text or assume English/Auto for now
+                language={Language.English}
                 patientData={{
                   age: selectedRecord.patientAge || '',
                   sex: (selectedRecord.patientSex as Gender) || Gender.Other,
@@ -307,6 +385,9 @@ export default function App() {
 
       </main>
       <Footer />
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <SubscriptionModal isOpen={isSubscriptionModalOpen} onClose={() => setIsSubscriptionModalOpen(false)} />
     </div>
   );
 }
