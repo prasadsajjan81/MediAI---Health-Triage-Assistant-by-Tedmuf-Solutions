@@ -20,7 +20,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { Language, PatientData, AnalysisRecord } from '../types';
-import { generatePDF } from '../utils/pdfGenerator';
+import { generatePDF } from '@/src/utils/pdfGenerator';
 
 interface AnalysisResultProps {
   markdown: string;

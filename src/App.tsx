@@ -9,9 +9,9 @@ import DoctorDashboard from './components/DoctorDashboard';
 import AuthModal from './components/AuthModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import { PatientData, Gender, FileData, AnalysisState, Language, AudioData, AnalysisRecord } from './types';
-import { analyzeHealthData } from './services/geminiService';
+import { analyzeHealthData } from '@/src/services/geminiService';
 import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown } from 'lucide-react';
-import { generatePDF } from './utils/pdfGenerator';
+import { generatePDF } from '@/src/utils/pdfGenerator';
 import { useAuth } from './AuthContext';
 import { db } from './firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
@@ -27,6 +27,7 @@ const INITIAL_PATIENT_DATA: PatientData = {
   includeAyurveda: false,
 };
 
+// Main Application Component
 export default function App() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'patient' | 'doctor'>('patient');
