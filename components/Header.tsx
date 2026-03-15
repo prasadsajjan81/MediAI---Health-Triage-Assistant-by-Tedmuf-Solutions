@@ -10,7 +10,7 @@ const Header: React.FC = () => {
             <HeartPulse size={24} strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">MediAI</h1>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Vishwasini - MediAI</h1>
             <p className="text-xs text-slate-500 font-medium">Multimodal Triage Assistant</p>
           </div>
         </div>

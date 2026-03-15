@@ -84,7 +84,7 @@ export const generatePDF = (record: AnalysisRecord) => {
     doc.setFontSize(18);
     doc.setTextColor(13, 148, 136); // Teal
     doc.setFont("helvetica", "bold");
-    doc.text("MediAI – Health Triage Report", margin, y);
+    doc.text("Vishwasini - MediAI – Health Triage Report", margin, y);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -96,7 +96,7 @@ export const generatePDF = (record: AnalysisRecord) => {
     doc.setFontSize(9);
     doc.setTextColor(220, 38, 38); // Red
     doc.setFont("helvetica", "bold");
-    const disclaimer = "MediAI is an AI assistant, not a doctor. This report is for informational purposes only and is not a medical diagnosis or treatment plan. Always consult a professional.";
+    const disclaimer = "Vishwasini - MediAI is an AI assistant, not a doctor. This report is for informational purposes only and is not a medical diagnosis or treatment plan. Always consult a professional.";
     const splitDisclaimer = doc.splitTextToSize(disclaimer, contentWidth);
     doc.text(splitDisclaimer, margin, y);
     y += (splitDisclaimer.length * 10) + 10;
@@ -227,7 +227,7 @@ export const generatePDF = (record: AnalysisRecord) => {
         doc.text(split, margin, y);
     }
 
-    doc.save(`MediAI-Report-${record.id.slice(0, 8)}.pdf`);
+    doc.save(`Vishwasini-MediAI-Report-${record.id.slice(0, 8)}.pdf`);
 
   } catch (error) {
     console.error("PDF Generation failed", error);
