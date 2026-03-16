@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 // Import the Firebase configuration from the config file if it exists
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from './firebase-applet-config.json';
 
 // Initialize Firebase safely
 let app;
