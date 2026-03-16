@@ -77,7 +77,8 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     setLoading(planId);
 
     try {
-      let razorpayKey = (import.meta as any).env.VITE_RAZORPAY_KEY_ID;
+      const env = (import.meta as any).env;
+      let razorpayKey = env.VITE_RAZORPAY_KEY_ID || env.VITE_RAZORPAY_KEY;
       
       // Fallback: Fetch from server if frontend env is missing
       if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
