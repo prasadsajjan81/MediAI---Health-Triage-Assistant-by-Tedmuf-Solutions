@@ -1,8 +1,9 @@
 import React from 'react';
-import { HeartPulse, LogIn, LogOut, User, Crown } from 'lucide-react';
+import { LogIn, LogOut, User, Crown } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import Logo from './Logo';
 
 interface HeaderProps {
   onOpenAuth: () => void;
@@ -16,12 +17,12 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-teal-600 p-2 rounded-lg text-white">
-            <HeartPulse size={24} strokeWidth={2.5} />
+          <div className="bg-teal-600 p-2 rounded-xl text-white shadow-lg shadow-teal-600/20">
+            <Logo size={24} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Vishwasini - MediAI</h1>
-            <p className="text-xs text-slate-500 font-medium">Multimodal Triage Assistant</p>
+            <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Your Trusted AI Health Companion</p>
           </div>
         </div>
         

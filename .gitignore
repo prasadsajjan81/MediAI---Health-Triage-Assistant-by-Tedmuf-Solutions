@@ -19,6 +19,7 @@ dist-ssr
 
 # AI Studio artifacts
 migrated_prompt_history/
+firebase-applet-config.json
 
 # Editor directories and files
 .vscode/*
