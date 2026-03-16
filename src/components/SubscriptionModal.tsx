@@ -77,12 +77,24 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     setLoading(planId);
 
     try {
-      const razorpayKey = (import.meta as any).env.VITE_RAZORPAY_KEY_ID;
+      let razorpayKey = (import.meta as any).env.VITE_RAZORPAY_KEY_ID;
+      
+      // Fallback: Fetch from server if frontend env is missing
+      if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
+        try {
+          const configRes = await fetch('/api/payments/config');
+          const config = await configRes.json();
+          razorpayKey = config.keyId;
+        } catch (e) {
+          console.error("Failed to fetch Razorpay config from server", e);
+        }
+      }
+
       console.log("Razorpay Key Check:", razorpayKey ? `${razorpayKey.substring(0, 8)}...` : "MISSING");
       
       if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
-        console.error("Razorpay Key ID is missing in frontend environment.");
-        alert("Razorpay Key ID is missing. Please ensure VITE_RAZORPAY_KEY_ID is set in the AI Studio Settings and that you have restarted the application.");
+        console.error("Razorpay Key ID is missing in both frontend and backend.");
+        alert("Razorpay Key ID is missing. Please ensure RAZORPAY_KEY_ID is set in the AI Studio Settings and that you have restarted the application.");
         setLoading(null);
         return;
       }

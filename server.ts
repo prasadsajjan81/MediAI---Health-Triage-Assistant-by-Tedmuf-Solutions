@@ -28,6 +28,12 @@ const razorpay = new Razorpay({
 });
 
 // API Routes
+app.get("/api/payments/config", (req, res) => {
+  res.json({ 
+    keyId: RAZORPAY_KEY_ID || "rzp_test_placeholder" 
+  });
+});
+
 app.post("/api/payments/order", async (req, res) => {
   try {
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET || RAZORPAY_KEY_ID === 'rzp_test_placeholder') {
