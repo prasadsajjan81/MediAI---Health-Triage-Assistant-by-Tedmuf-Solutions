@@ -30,6 +30,11 @@ const razorpay = new Razorpay({
 // API Routes
 app.post("/api/payments/order", async (req, res) => {
   try {
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET || RAZORPAY_KEY_ID === 'rzp_test_placeholder') {
+      console.error("Payment attempt failed: Razorpay keys not configured on server.");
+      return res.status(500).json({ error: "Razorpay API keys are not configured on the server. Please add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to environment variables." });
+    }
+
     const { amount, currency = "INR" } = req.body;
     
     const options = {

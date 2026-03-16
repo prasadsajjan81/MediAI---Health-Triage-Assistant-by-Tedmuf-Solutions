@@ -79,8 +79,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     try {
       const razorpayKey = (import.meta as any).env.VITE_RAZORPAY_KEY_ID;
       
-      if (!razorpayKey || razorpayKey === 'rzp_test_placeholder') {
-        alert("Razorpay API Key is missing. Please configure VITE_RAZORPAY_KEY_ID in your environment variables.");
+      if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
+        console.error("Razorpay Key ID is missing in frontend environment.");
+        alert("Razorpay Key ID is missing. Please ensure VITE_RAZORPAY_KEY_ID is set in the AI Studio Settings and that you have restarted the application.");
         setLoading(null);
         return;
       }
