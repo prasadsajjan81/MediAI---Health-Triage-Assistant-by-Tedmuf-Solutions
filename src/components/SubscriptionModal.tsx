@@ -77,6 +77,14 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     setLoading(planId);
 
     try {
+      const razorpayKey = (import.meta as any).env.VITE_RAZORPAY_KEY_ID;
+      
+      if (!razorpayKey || razorpayKey === 'rzp_test_placeholder') {
+        alert("Razorpay API Key is missing. Please configure VITE_RAZORPAY_KEY_ID in your environment variables.");
+        setLoading(null);
+        return;
+      }
+
       // 1. Create Order on Backend
       const response = await fetch('/api/payments/order', {
         method: 'POST',

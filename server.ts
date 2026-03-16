@@ -15,9 +15,16 @@ app.use(cors());
 app.use(express.json());
 
 // Razorpay setup
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET || RAZORPAY_KEY_ID === 'rzp_test_placeholder') {
+  console.warn("⚠️ Razorpay API keys are not configured. Payments will fail.");
+}
+
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "placeholder_secret",
+  key_id: RAZORPAY_KEY_ID || "rzp_test_placeholder",
+  key_secret: RAZORPAY_KEY_SECRET || "placeholder_secret",
 });
 
 // API Routes
