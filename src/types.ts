@@ -63,3 +63,22 @@ export interface AnalysisRecord {
   summaryQuick?: string;
   markdown: string;
 }
+
+export enum SubscriptionPlan {
+  Free = 'free',
+  Student = 'student',
+  Doctor = 'doctor',
+  Hospital = 'hospital'
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: 'admin' | 'user';
+  subscriptionStatus: 'free' | 'active' | 'expired';
+  subscriptionPlan: SubscriptionPlan;
+  subscriptionEndDate: string | null;
+  freeTestsRemaining: number;
+  apiCredits?: number; // For Hospital Integration
+}

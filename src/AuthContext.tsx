@@ -3,16 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-
-interface UserProfile {
-  uid: string;
-  email: string;
-  displayName: string;
-  role: 'admin' | 'user';
-  subscriptionStatus: 'free' | 'active' | 'expired';
-  subscriptionEndDate: string | null;
-  freeTestsRemaining: number;
-}
+import { UserProfile, SubscriptionPlan } from './types';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -52,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             displayName: firebaseUser.displayName || '',
             role: firebaseUser.email === 'prasadsajjan81@gmail.com' ? 'admin' : 'user',
             subscriptionStatus: 'free',
+            subscriptionPlan: SubscriptionPlan.Free,
             subscriptionEndDate: null,
             freeTestsRemaining: 1,
           };

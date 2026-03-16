@@ -10,8 +10,10 @@
         "displayName": { "type": "string", "description": "User display name" },
         "role": { "type": "string", "enum": ["admin", "user"], "description": "User role" },
         "subscriptionStatus": { "type": "string", "enum": ["free", "active", "expired"], "description": "Current subscription status" },
+        "subscriptionPlan": { "type": "string", "enum": ["free", "student", "doctor", "hospital"], "description": "Current subscription plan" },
         "subscriptionEndDate": { "type": "string", "format": "date-time", "description": "When the subscription expires" },
         "freeTestsRemaining": { "type": "integer", "description": "Number of free tests left (default 1)" },
+        "apiCredits": { "type": "integer", "description": "Remaining API credits for hospital integration" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "role"]
