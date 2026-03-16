@@ -15,14 +15,22 @@ const firebaseConfig = {
 };
 
 // Validation and Error Reporting
-export const isFirebaseConfigValid = !!(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.apiKey !== 'undefined');
+const isValidKey = (key: any) => {
+  return typeof key === 'string' && key.length > 10 && key.startsWith('AIza');
+};
+
+export const isFirebaseConfigValid = isValidKey(firebaseConfig.apiKey) && !!firebaseConfig.projectId;
 
 if (!isFirebaseConfigValid) {
   const missing = [];
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') missing.push('API Key');
-  if (!firebaseConfig.projectId || firebaseConfig.projectId === 'undefined') missing.push('Project ID');
+  if (!isValidKey(firebaseConfig.apiKey)) {
+    const keyType = typeof firebaseConfig.apiKey;
+    const keyVal = String(firebaseConfig.apiKey);
+    missing.push(`API Key (Type: ${keyType}, Start: ${keyVal.substring(0, 4)}...)`);
+  }
+  if (!firebaseConfig.projectId) missing.push('Project ID');
   
-  console.error(`Firebase Configuration Error: Missing ${missing.join(', ')}`);
+  console.error(`Firebase Configuration Error: Missing or Invalid ${missing.join(', ')}`);
 }
 
 // Initialize Firebase safely
