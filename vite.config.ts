@@ -5,13 +5,12 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
     // Load env file based on `mode` in the current working directory.
-    // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
-    const env = loadEnv(mode, process.cwd(), '');
+    const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
     
-    // Debug logging for build process (will show in Vercel logs)
+    // Debug logging for build process
     console.log('Build Mode:', mode);
-    console.log('Firebase API Key found in env:', !!(env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY));
-    console.log('Project ID found in env:', !!(env.VITE_FIREBASE_PROJECT_ID || env.FIREBASE_PROJECT_ID));
+    const hasKey = !!(env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY);
+    console.log('Firebase API Key found:', hasKey);
 
     return {
       server: {
