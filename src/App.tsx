@@ -83,7 +83,7 @@ export default function App() {
     }
 
     let q;
-    if (isAdmin && activeTab === 'doctor') {
+    if ((isAdmin || profile?.role === 'doctor' || profile?.role === 'hospital') && activeTab === 'doctor') {
       q = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(100));
     } else {
       q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
@@ -174,7 +174,7 @@ export default function App() {
       return;
     }
 
-    if (profile?.subscriptionStatus === 'free' && profile.freeTestsRemaining <= 0) {
+    if (profile?.subscriptionStatus === 'free' && profile.freeTestsRemaining <= 0 && !isAdmin) {
       setIsSubscriptionModalOpen(true);
       return;
     }
@@ -244,8 +244,8 @@ export default function App() {
               onClick={() => {
                 if (!user) {
                   setIsAuthModalOpen(true);
-                } else if (!isAdmin) {
-                  alert("Access Denied: Only administrators can access the Doctor Panel.");
+                } else if (!isAdmin && profile?.role !== 'doctor' && profile?.role !== 'hospital') {
+                  alert("Access Denied: Only medical professionals or administrators can access the Doctor Panel.");
                 } else {
                   setActiveTab('doctor');
                 }
@@ -273,7 +273,7 @@ export default function App() {
             </div>
 
             {/* Subscription Status Card */}
-            {user && profile?.subscriptionStatus === 'free' && (
+            {user && profile?.subscriptionStatus === 'free' && !isAdmin && (
               <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-2xl p-6 text-white shadow-lg shadow-teal-600/20 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-white/20 rounded-xl">

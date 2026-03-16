@@ -75,7 +75,7 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'student' | 'doctor' | 'hospital';
   subscriptionStatus: 'free' | 'active' | 'expired';
   subscriptionPlan: SubscriptionPlan;
   subscriptionEndDate: string | null;

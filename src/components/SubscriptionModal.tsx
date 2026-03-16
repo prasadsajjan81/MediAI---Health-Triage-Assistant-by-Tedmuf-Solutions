@@ -105,7 +105,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
           const verifyData = await verifyRes.json();
 
           if (verifyData.status === 'success') {
-            // 4. Update Subscription in Firestore
+            // 4. Update Subscription and Role in Firestore
             const userRef = doc(db, 'users', profile.uid);
             const endDate = new Date();
             if (billingCycle === 'yearly' && planId === SubscriptionPlan.Student) {
@@ -114,13 +114,20 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               endDate.setMonth(endDate.getMonth() + 1);
             }
 
+            // Map plan to role
+            let newRole: 'user' | 'student' | 'doctor' | 'hospital' = 'user';
+            if (planId === SubscriptionPlan.Student) newRole = 'student';
+            else if (planId === SubscriptionPlan.Doctor) newRole = 'doctor';
+            else if (planId === SubscriptionPlan.Hospital) newRole = 'hospital';
+
             await updateDoc(userRef, {
               subscriptionStatus: 'active',
               subscriptionPlan: planId,
               subscriptionEndDate: endDate.toISOString(),
+              role: newRole
             });
 
-            alert("Payment Successful! Your subscription is now active.");
+            alert(`Payment Successful! Your ${planId} subscription is now active.`);
             onClose();
           } else {
             alert("Payment verification failed. Please contact support.");
