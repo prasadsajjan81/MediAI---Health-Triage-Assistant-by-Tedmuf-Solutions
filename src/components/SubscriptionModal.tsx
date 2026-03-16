@@ -82,9 +82,18 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       // Fallback: Fetch from server if frontend env is missing
       if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
         try {
+          console.log("Attempting to fetch Razorpay config from server...");
           const configRes = await fetch('/api/payments/config');
+          
+          if (!configRes.ok) {
+            const text = await configRes.text();
+            console.error(`Server returned ${configRes.status}: ${text.substring(0, 100)}`);
+            throw new Error(`Server error: ${configRes.status}`);
+          }
+
           const config = await configRes.json();
           razorpayKey = config.keyId;
+          console.log("Successfully fetched Razorpay config from server.");
         } catch (e) {
           console.error("Failed to fetch Razorpay config from server", e);
         }
@@ -110,7 +119,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
       // 2. Open Razorpay Checkout
       const options = {
-        key: (import.meta as any).env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder",
+        key: razorpayKey,
         amount: order.amount,
         currency: order.currency,
         name: "Vishwasini - MediAI",
