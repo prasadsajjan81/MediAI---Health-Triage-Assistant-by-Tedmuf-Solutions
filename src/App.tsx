@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PatientForm from './components/PatientForm';
@@ -10,11 +10,63 @@ import AuthModal from './components/AuthModal';
 import SubscriptionModal from './components/SubscriptionModal';
 import { PatientData, Gender, FileData, AnalysisState, Language, AudioData, AnalysisRecord } from './types';
 import { analyzeHealthData } from './services/geminiService';
-import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown } from 'lucide-react';
+import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown, RefreshCcw } from 'lucide-react';
 import { generatePDF } from './utils/pdfGenerator';
 import { useAuth } from './AuthContext';
-import { db, isFirebaseConfigValid } from './firebase';
+import { db, isFirebaseConfigValid, handleFirestoreError, OperationType } from './firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
+
+// Error Boundary Component
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      let errorMessage = "An unexpected error occurred.";
+      try {
+        const parsed = JSON.parse(this.state.error?.message || "");
+        if (parsed.error && parsed.operationType) {
+          errorMessage = `Database Error (${parsed.operationType}): ${parsed.error}`;
+        }
+      } catch (e) {
+        errorMessage = this.state.error?.message || errorMessage;
+      }
+
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+          <div className="bg-white p-8 rounded-3xl shadow-xl border border-red-100 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Something went wrong</h2>
+            <p className="text-slate-600 mb-6 leading-relaxed">
+              {errorMessage}
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-center"
+            >
+              <RefreshCcw size={18} className="mr-2" /> Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const INITIAL_PATIENT_DATA: PatientData = {
   age: '',
@@ -96,7 +148,9 @@ export default function App() {
       })) as AnalysisRecord[];
       setHistory(records);
     }, (error) => {
-      if (error.code !== 'permission-denied') {
+      if (error.code === 'permission-denied') {
+        handleFirestoreError(error, OperationType.LIST, 'analyses');
+      } else {
         console.error("Firestore history error:", error);
       }
     });
@@ -165,7 +219,10 @@ export default function App() {
         });
       }
       
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        handleFirestoreError(e, OperationType.WRITE, 'analyses/users');
+      }
       console.error("Error saving analysis record", e);
     }
   };
@@ -225,200 +282,202 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50">
-      <Header 
-        onOpenAuth={() => setIsAuthModalOpen(true)} 
-        onOpenSubscription={() => setIsSubscriptionModalOpen(true)} 
-      />
+    <ErrorBoundary>
+      <div className="min-h-screen pb-20 bg-slate-50">
+        <Header 
+          onOpenAuth={() => setIsAuthModalOpen(true)} 
+          onOpenSubscription={() => setIsSubscriptionModalOpen(true)} 
+        />
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        
-        {/* Tab Switcher */}
-        <div className="flex justify-center mb-6">
-          <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
-            <button 
-              onClick={() => setActiveTab('patient')}
-              className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'patient' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
-            >
-              <User size={16} className="mr-2" /> Patient View
-            </button>
-            <button 
-              onClick={() => {
-                if (!user) {
-                  setIsAuthModalOpen(true);
-                } else if (!isAdmin && profile?.role !== 'doctor' && profile?.role !== 'hospital') {
-                  alert("Access Denied: Only medical professionals or administrators can access the Doctor Panel.");
-                } else {
-                  setActiveTab('doctor');
-                }
-              }}
-              className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
-            >
-              <Stethoscope size={16} className="mr-2" /> Doctor Panel
-            </button>
-          </div>
-        </div>
-
-        {/* --- PATIENT TAB --- */}
-        {activeTab === 'patient' && (
-          <>
-            {/* Safety Banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
-              <AlertTriangle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
-              <div>
-                <h3 className="font-semibold text-amber-800 text-sm">Medical Disclaimer</h3>
-                <p className="text-amber-700 text-sm mt-1">
-                  Vishwasini - MediAI is an AI tool for informational purposes only. It is <strong>not a doctor</strong>. 
-                  If you are experiencing a medical emergency, call emergency services immediately.
-                </p>
-              </div>
+        <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+          
+          {/* Tab Switcher */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
+              <button 
+                onClick={() => setActiveTab('patient')}
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'patient' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <User size={16} className="mr-2" /> Patient View
+              </button>
+              <button 
+                onClick={() => {
+                  if (!user) {
+                    setIsAuthModalOpen(true);
+                  } else if (!isAdmin && profile?.role !== 'doctor' && profile?.role !== 'hospital') {
+                    alert("Access Denied: Only medical professionals or administrators can access the Doctor Panel.");
+                  } else {
+                    setActiveTab('doctor');
+                  }
+                }}
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <Stethoscope size={16} className="mr-2" /> Doctor Panel
+              </button>
             </div>
+          </div>
 
-            {/* Subscription Status Card */}
-            {user && profile?.subscriptionStatus === 'free' && !isAdmin && (
-              <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-2xl p-6 text-white shadow-lg shadow-teal-600/20 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-white/20 rounded-xl">
-                    <Crown size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg">Free Plan Active</h3>
-                    <p className="text-teal-50 opacity-90 text-sm">You have <strong>{profile.freeTestsRemaining}</strong> free analysis remaining.</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsSubscriptionModalOpen(true)}
-                  className="px-6 py-2 bg-white text-teal-600 font-bold rounded-xl hover:bg-teal-50 transition-all transform hover:scale-105"
-                >
-                  Upgrade to Pro
-                </button>
-              </div>
-            )}
-
-            <div className={`transition-all duration-500 space-y-8 ${analysis.result ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-              <PatientForm data={patientData} onChange={handleDataChange} />
-              <AudioRecorder audioData={audioData} setAudioData={setAudioData} />
-              
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                  <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
-                  Describe Symptoms (Text)
-                </h2>
-                <textarea
-                  value={patientData.symptoms}
-                  onChange={(e) => handleDataChange('symptoms', e.target.value)}
-                  placeholder="Describe what you are feeling in your own words. Include when it started, pain levels (1-10), and location..."
-                  className="w-full h-40 p-4 rounded-xl border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none resize-none text-slate-700 leading-relaxed"
-                ></textarea>
-              </div>
-
-              <FileUpload 
-                symptomFiles={symptomFiles}
-                setSymptomFiles={setSymptomFiles}
-                reportFile={reportFile}
-                setReportFile={setReportFile}
-              />
-
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors group"
-                  onClick={() => handleDataChange('includeAyurveda', !patientData.includeAyurveda)}>
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-xl transition-colors ${patientData.includeAyurveda ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>
-                    <Leaf size={24} />
-                  </div>
-                  <div>
-                    <h3 className={`font-semibold text-lg ${patientData.includeAyurveda ? 'text-teal-900' : 'text-slate-700'}`}>Ayurvedic Interpretation</h3>
-                    <p className="text-sm text-slate-500">Get Dosha-based insights and holistic wellness tips</p>
-                  </div>
-                </div>
-                <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${patientData.includeAyurveda ? 'bg-teal-500' : 'bg-slate-300'}`}>
-                  <div className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${patientData.includeAyurveda ? 'translate-x-6' : ''}`}></div>
+          {/* --- PATIENT TAB --- */}
+          {activeTab === 'patient' && (
+            <>
+              {/* Safety Banner */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+                <AlertTriangle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
+                <div>
+                  <h3 className="font-semibold text-amber-800 text-sm">Medical Disclaimer</h3>
+                  <p className="text-amber-700 text-sm mt-1">
+                    Vishwasini - MediAI is an AI tool for informational purposes only. It is <strong>not a doctor</strong>. 
+                    If you are experiencing a medical emergency, call emergency services immediately.
+                  </p>
                 </div>
               </div>
 
-              {analysis.error && (
-                <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium flex items-center">
-                  <AlertTriangle className="mr-2" size={18} />
-                  {analysis.error}
+              {/* Subscription Status Card */}
+              {user && profile?.subscriptionStatus === 'free' && !isAdmin && (
+                <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-2xl p-6 text-white shadow-lg shadow-teal-600/20 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-white/20 rounded-xl">
+                      <Crown size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">Free Plan Active</h3>
+                      <p className="text-teal-50 opacity-90 text-sm">You have <strong>{profile.freeTestsRemaining}</strong> free analysis remaining.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsSubscriptionModalOpen(true)}
+                    className="px-6 py-2 bg-white text-teal-600 font-bold rounded-xl hover:bg-teal-50 transition-all transform hover:scale-105"
+                  >
+                    Upgrade to Pro
+                  </button>
                 </div>
               )}
 
-              <button
-                onClick={handleAnalyze}
-                disabled={analysis.loading}
-                className={`w-full max-w-md mx-auto py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0
-                  ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600'}`}
-              >
-                {analysis.loading ? (
-                  <>
-                    <Loader2 className="animate-spin" size={24} />
-                    <span>Analyzing inputs...</span>
-                  </>
-                ) : (
-                  <>
-                    {!user ? <Lock size={20} className="mr-2 opacity-50" /> : <Sparkles size={24} />}
-                    <span>{user ? 'Analyze with Vishwasini - MediAI' : 'Sign In to Analyze'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {analysis.result && (
-              <div id="results-section" className="mt-12">
-                <AnalysisResult 
-                    markdown={analysis.result} 
-                    language={patientData.language}
-                    patientData={patientData}
-                />
+              <div className={`transition-all duration-500 space-y-8 ${analysis.result ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                <PatientForm data={patientData} onChange={handleDataChange} />
+                <AudioRecorder audioData={audioData} setAudioData={setAudioData} />
                 
-                <button 
-                  onClick={() => {
-                    setAnalysis({ loading: false, result: null, error: null });
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="mt-8 w-full max-w-md mx-auto py-4 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center"
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                    <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
+                    Describe Symptoms (Text)
+                  </h2>
+                  <textarea
+                    value={patientData.symptoms}
+                    onChange={(e) => handleDataChange('symptoms', e.target.value)}
+                    placeholder="Describe what you are feeling in your own words. Include when it started, pain levels (1-10), and location..."
+                    className="w-full h-40 p-4 rounded-xl border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none resize-none text-slate-700 leading-relaxed"
+                  ></textarea>
+                </div>
+
+                <FileUpload 
+                  symptomFiles={symptomFiles}
+                  setSymptomFiles={setSymptomFiles}
+                  reportFile={reportFile}
+                  setReportFile={setReportFile}
+                />
+
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors group"
+                    onClick={() => handleDataChange('includeAyurveda', !patientData.includeAyurveda)}>
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl transition-colors ${patientData.includeAyurveda ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>
+                      <Leaf size={24} />
+                    </div>
+                    <div>
+                      <h3 className={`font-semibold text-lg ${patientData.includeAyurveda ? 'text-teal-900' : 'text-slate-700'}`}>Ayurvedic Interpretation</h3>
+                      <p className="text-sm text-slate-500">Get Dosha-based insights and holistic wellness tips</p>
+                    </div>
+                  </div>
+                  <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${patientData.includeAyurveda ? 'bg-teal-500' : 'bg-slate-300'}`}>
+                    <div className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${patientData.includeAyurveda ? 'translate-x-6' : ''}`}></div>
+                  </div>
+                </div>
+
+                {analysis.error && (
+                  <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium flex items-center">
+                    <AlertTriangle className="mr-2" size={18} />
+                    {analysis.error}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleAnalyze}
+                  disabled={analysis.loading}
+                  className={`w-full max-w-md mx-auto py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0
+                    ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600'}`}
                 >
-                  Start New Analysis
+                  {analysis.loading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={24} />
+                      <span>Analyzing inputs...</span>
+                    </>
+                  ) : (
+                    <>
+                      {!user ? <Lock size={20} className="mr-2 opacity-50" /> : <Sparkles size={24} />}
+                      <span>{user ? 'Analyze with Vishwasini - MediAI' : 'Sign In to Analyze'}</span>
+                    </>
+                  )}
                 </button>
               </div>
-            )}
-          </>
-        )}
 
-        {/* --- DOCTOR TAB --- */}
-        {activeTab === 'doctor' && isAdmin && (
-          <div className="animate-in fade-in duration-500">
-            {selectedRecord ? (
-              <AnalysisResult 
-                markdown={selectedRecord.markdown}
-                language={Language.English}
-                patientData={{
-                  age: selectedRecord.patientAge || '',
-                  sex: (selectedRecord.patientSex as Gender) || Gender.Other,
-                  language: Language.Auto,
-                  duration: selectedRecord.duration || '',
-                  conditions: selectedRecord.conditions || '',
-                  medications: selectedRecord.medications || '',
-                  symptoms: '',
-                  includeAyurveda: false
-                }}
-                recordId={selectedRecord.id}
-                onBack={() => setSelectedRecord(null)}
-              />
-            ) : (
-              <DoctorDashboard 
-                history={history}
-                onSelectRecord={handleDoctorViewRecord}
-                onDownloadPdf={(record) => generatePDF(record)}
-              />
-            )}
-          </div>
-        )}
+              {analysis.result && (
+                <div id="results-section" className="mt-12">
+                  <AnalysisResult 
+                      markdown={analysis.result} 
+                      language={patientData.language}
+                      patientData={patientData}
+                  />
+                  
+                  <button 
+                    onClick={() => {
+                      setAnalysis({ loading: false, result: null, error: null });
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="mt-8 w-full max-w-md mx-auto py-4 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center"
+                  >
+                    Start New Analysis
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
-      </main>
-      <Footer />
+          {/* --- DOCTOR TAB --- */}
+          {activeTab === 'doctor' && isAdmin && (
+            <div className="animate-in fade-in duration-500">
+              {selectedRecord ? (
+                <AnalysisResult 
+                  markdown={selectedRecord.markdown}
+                  language={Language.English}
+                  patientData={{
+                    age: selectedRecord.patientAge || '',
+                    sex: (selectedRecord.patientSex as Gender) || Gender.Other,
+                    language: Language.Auto,
+                    duration: selectedRecord.duration || '',
+                    conditions: selectedRecord.conditions || '',
+                    medications: selectedRecord.medications || '',
+                    symptoms: '',
+                    includeAyurveda: false
+                  }}
+                  recordId={selectedRecord.id}
+                  onBack={() => setSelectedRecord(null)}
+                />
+              ) : (
+                <DoctorDashboard 
+                  history={history}
+                  onSelectRecord={handleDoctorViewRecord}
+                  onDownloadPdf={(record) => generatePDF(record)}
+                />
+              )}
+            </div>
+          )}
 
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <SubscriptionModal isOpen={isSubscriptionModalOpen} onClose={() => setIsSubscriptionModalOpen(false)} />
-    </div>
+        </main>
+        <Footer />
+
+        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+        <SubscriptionModal isOpen={isSubscriptionModalOpen} onClose={() => setIsSubscriptionModalOpen(false)} />
+      </div>
+    </ErrorBoundary>
   );
 }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 // Authentication Context Provider
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db, isFirebaseConfigValid } from './firebase';
+import { auth, db, isFirebaseConfigValid, handleFirestoreError, OperationType } from './firebase';
 import { UserProfile, SubscriptionPlan } from './types';
 
 interface AuthContextType {
@@ -70,15 +70,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             setLoading(false);
           }, (error) => {
-            console.error("Profile listener error:", error);
-            // If we get a permission error, it's likely because the user logged out
-            // while the listener was still active.
             if (error.code === 'permission-denied') {
               setProfile(null);
+              handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
             }
             setLoading(false);
           });
-        } catch (error) {
+        } catch (error: any) {
+          if (error.code === 'permission-denied') {
+            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+          }
           console.error("Error setting up profile:", error);
           setLoading(false);
         }
