@@ -2,18 +2,18 @@ import { initializeApp } from 'firebase/app';
 // Firebase Configuration and Initialization
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-import firebaseConfigLocal from '../firebase-applet-config.json';
 
-// Load configuration from environment variables with local file fallback
-const env = (import.meta as any).env || {};
+// Load configuration from environment variables (VITE_ prefix for client-side)
+// For local development, you should set these in a .env file.
+// For production (Vercel), set these in the project environment variables.
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY || firebaseConfigLocal.apiKey,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigLocal.authDomain,
-  projectId: env.VITE_FIREBASE_PROJECT_ID || firebaseConfigLocal.projectId,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigLocal.storageBucket,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigLocal.messagingSenderId,
-  appId: env.VITE_FIREBASE_APP_ID || firebaseConfigLocal.appId,
-  firestoreDatabaseId: env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigLocal.firestoreDatabaseId
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID
 };
 
 // Initialize Firebase
