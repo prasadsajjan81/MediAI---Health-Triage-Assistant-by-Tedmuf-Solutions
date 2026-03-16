@@ -78,6 +78,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
     try {
       const razorpayKey = (import.meta as any).env.VITE_RAZORPAY_KEY_ID;
+      console.log("Razorpay Key Check:", razorpayKey ? `${razorpayKey.substring(0, 8)}...` : "MISSING");
       
       if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
         console.error("Razorpay Key ID is missing in frontend environment.");
