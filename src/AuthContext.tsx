@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 // Authentication Context Provider
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth, db, isFirebaseConfigValid } from './firebase';
 import { UserProfile, SubscriptionPlan } from './types';
 
 interface AuthContextType {
