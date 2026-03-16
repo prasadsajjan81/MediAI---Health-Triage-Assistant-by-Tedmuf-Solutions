@@ -39,8 +39,8 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
             <Logo size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Vishwasini - MediAI</h1>
-            <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Your Trusted AI Health Companion</p>
+            <h1 className="text-2xl font-display font-bold text-slate-900 tracking-tight leading-none">Vishwasini <span className="text-teal-600">MediAI</span></h1>
+            <p className="text-[10px] sm:text-[11px] text-slate-500 font-outfit font-bold uppercase tracking-[0.2em] mt-1">Your Trusted AI Health Companion</p>
           </div>
         </div>
         

@@ -96,7 +96,9 @@ export default function App() {
       })) as AnalysisRecord[];
       setHistory(records);
     }, (error) => {
-      console.error("Firestore history error:", error);
+      if (error.code !== 'permission-denied') {
+        console.error("Firestore history error:", error);
+      }
     });
 
     return () => unsubscribe();

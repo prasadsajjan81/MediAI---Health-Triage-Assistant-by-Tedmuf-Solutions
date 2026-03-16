@@ -15,37 +15,47 @@ const Logo: React.FC<LogoProps> = ({ size = 24, className = "" }) => {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Shield Shape - Representing Trust (Vishwasini) */}
+      {/* Elegant Shield Shape */}
       <path 
-        d="M50 5L15 20V45C15 68.3333 30 88.3333 50 95C70 88.3333 85 68.3333 85 45V20L50 5Z" 
-        fill="currentColor" 
-        fillOpacity="0.1"
+        d="M50 8L18 22V45C18 66 32 85 50 92C68 85 82 66 82 45V22L50 8Z" 
+        fill="url(#logo-gradient)" 
+        fillOpacity="0.15"
       />
       <path 
-        d="M50 5L15 20V45C15 68.3333 30 88.3333 50 95C70 88.3333 85 68.3333 85 45V20L50 5Z" 
+        d="M50 8L18 22V45C18 66 32 85 50 92C68 85 82 66 82 45V22L50 8Z" 
         stroke="currentColor" 
-        strokeWidth="6" 
+        strokeWidth="3.5" 
         strokeLinejoin="round"
       />
       
-      {/* Heart Pulse / "V" Shape */}
+      {/* Refined Pulse / "V" Shape */}
       <path 
-        d="M25 50H35L42 35L52 65L60 45L65 50H75" 
+        d="M30 52H38L44 38L52 62L58 48L62 52H70" 
         stroke="currentColor" 
-        strokeWidth="6" 
+        strokeWidth="4" 
         strokeLinecap="round" 
         strokeLinejoin="round"
       />
       
-      {/* Intelligence Spark */}
-      <circle cx="75" cy="35" r="5" fill="currentColor">
+      {/* Sophisticated Sparkle */}
+      <path 
+        d="M72 32L74 26L76 32L82 34L76 36L74 42L72 36L66 34L72 32Z" 
+        fill="currentColor"
+      >
         <animate 
           attributeName="opacity" 
-          values="1;0.4;1" 
-          dur="2s" 
+          values="1;0.3;1" 
+          dur="3s" 
           repeatCount="indefinite" 
         />
-      </circle>
+      </path>
+
+      <defs>
+        <linearGradient id="logo-gradient" x1="18" y1="8" x2="82" y2="92" gradientUnits="userSpaceOnUse">
+          <stop stopColor="currentColor" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0.5" />
+        </linearGradient>
+      </defs>
     </svg>
   );
 };

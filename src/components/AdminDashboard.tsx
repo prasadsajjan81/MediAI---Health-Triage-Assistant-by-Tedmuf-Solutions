@@ -22,6 +22,10 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       const usersData = snapshot.docs.map(doc => doc.data() as UserProfile);
       setUsers(usersData);
       setLoading(false);
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error('Admin users listener error:', error);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -156,7 +160,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                         <select 
                           value={user.role}
                           onChange={(e) => handleUpdateRole(user.uid, e.target.value as 'admin' | 'user')}
-                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20"
+                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select"
                         >
                           <option value="user">User</option>
                           <option value="admin">Admin</option>
@@ -166,7 +170,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                         <select 
                           value={user.subscriptionPlan}
                           onChange={(e) => handleUpdatePlan(user.uid, e.target.value as SubscriptionPlan)}
-                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20"
+                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select"
                         >
                           <option value={SubscriptionPlan.Free}>Free</option>
                           <option value={SubscriptionPlan.Student}>Student</option>
@@ -234,7 +238,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                     <select 
                       value={newUser.role}
                       onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'user'})}
-                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                      className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select"
                     >
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
@@ -245,7 +249,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                     <select 
                       value={newUser.subscriptionPlan}
                       onChange={(e) => setNewUser({...newUser, subscriptionPlan: e.target.value as SubscriptionPlan})}
-                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                      className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select"
                     >
                       <option value={SubscriptionPlan.Free}>Free</option>
                       <option value={SubscriptionPlan.Student}>Student</option>

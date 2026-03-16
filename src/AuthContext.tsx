@@ -32,44 +32,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    let unsubscribeProfile: (() => void) | null = null;
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clean up previous profile listener if it exists
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       setUser(firebaseUser);
       
       if (firebaseUser) {
         // Listen to profile changes
         const userRef = doc(db, 'users', firebaseUser.uid);
         
-        // Check if profile exists, if not create it
-        const docSnap = await getDoc(userRef);
-        if (!docSnap.exists()) {
-          const newProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            displayName: firebaseUser.displayName || '',
-            role: firebaseUser.email === 'prasadsajjan81@gmail.com' ? 'admin' : 'user',
-            subscriptionStatus: 'free',
-            subscriptionPlan: SubscriptionPlan.Free,
-            subscriptionEndDate: null,
-            freeTestsRemaining: 1,
-          };
-          await setDoc(userRef, newProfile);
-        }
-
-        const unsubscribeProfile = onSnapshot(userRef, (doc) => {
-          if (doc.exists()) {
-            setProfile(doc.data() as UserProfile);
+        try {
+          // Check if profile exists, if not create it
+          const docSnap = await getDoc(userRef);
+          if (!docSnap.exists()) {
+            const newProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || '',
+              role: firebaseUser.email === 'prasadsajjan81@gmail.com' ? 'admin' : 'user',
+              subscriptionStatus: 'free',
+              subscriptionPlan: SubscriptionPlan.Free,
+              subscriptionEndDate: null,
+              freeTestsRemaining: 1,
+            };
+            await setDoc(userRef, newProfile);
           }
-          setLoading(false);
-        });
 
-        return () => unsubscribeProfile();
+          unsubscribeProfile = onSnapshot(userRef, (doc) => {
+            if (doc.exists()) {
+              setProfile(doc.data() as UserProfile);
+            }
+            setLoading(false);
+          }, (error) => {
+            console.error("Profile listener error:", error);
+            // If we get a permission error, it's likely because the user logged out
+            // while the listener was still active.
+            if (error.code === 'permission-denied') {
+              setProfile(null);
+            }
+            setLoading(false);
+          });
+        } catch (error) {
+          console.error("Error setting up profile:", error);
+          setLoading(false);
+        }
       } else {
         setProfile(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   const value = {

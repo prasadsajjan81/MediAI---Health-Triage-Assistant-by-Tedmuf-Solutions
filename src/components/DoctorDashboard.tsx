@@ -62,7 +62,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectReco
                 <select 
                    value={filterTriage}
                    onChange={(e) => setFilterTriage(e.target.value)}
-                   className="pl-10 pr-8 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none appearance-none bg-white"
+                   className="pl-10 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none bg-white form-select"
                 >
                     <option value="All">All Levels</option>
                     <option value="Emergency">Emergency</option>

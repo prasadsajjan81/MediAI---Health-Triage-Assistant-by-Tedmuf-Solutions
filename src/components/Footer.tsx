@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
               <div className="bg-teal-600 p-1.5 rounded-lg text-white">
                 <Logo size={20} />
               </div>
-              <h3 className="text-white font-bold text-lg">Vishwasini - MediAI</h3>
+              <h3 className="text-white font-display font-bold text-xl tracking-tight">Vishwasini <span className="text-teal-400">MediAI</span></h3>
             </div>
             <p className="text-sm leading-relaxed">
               Empowering individuals with AI-driven health triage and holistic wellness insights. 
@@ -20,13 +20,13 @@ const Footer: React.FC = () => {
             </p>
           </div>
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">Contact Details</h3>
-            <div className="space-y-3 text-sm">
+            <h3 className="text-white font-outfit font-bold text-sm uppercase tracking-widest mb-6">Contact Details</h3>
+            <div className="space-y-4 text-sm">
               <div className="flex items-start">
                 <User size={16} className="mr-3 text-teal-400 mt-0.5" />
-                <div className="flex flex-col">
-                  <span>Founder: Basavprasad Sajjanshetty</span>
-                  <span>Co-Founder: Dr. Priya Sajjanshetty</span>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-slate-100 font-medium">Basavprasad Sajjanshetty <span className="text-[10px] text-slate-500 uppercase ml-2">Founder</span></span>
+                  <span className="text-slate-100 font-medium">Dr. Priya Sajjanshetty <span className="text-[10px] text-slate-500 uppercase ml-2">Co-Founder</span></span>
                 </div>
               </div>
               <div className="flex items-center">
