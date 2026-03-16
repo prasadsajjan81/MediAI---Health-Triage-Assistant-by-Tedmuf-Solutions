@@ -4,8 +4,6 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 // Load configuration from environment variables (VITE_ prefix for client-side)
-// For local development, you should set these in a .env file.
-// For production (Vercel), set these in the project environment variables.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -16,10 +14,33 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+// Validation and Error Reporting
+export const isFirebaseConfigValid = !!(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.apiKey !== 'undefined');
+
+if (!isFirebaseConfigValid) {
+  const missing = [];
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') missing.push('API Key');
+  if (!firebaseConfig.projectId || firebaseConfig.projectId === 'undefined') missing.push('Project ID');
+  
+  console.error(`Firebase Configuration Error: Missing ${missing.join(', ')}`);
+}
+
+// Initialize Firebase safely
+let app;
+let auth: any;
+let db: any;
+
+try {
+  if (isFirebaseConfigValid) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+  }
+} catch (error) {
+  console.error("Error initializing Firebase:", error);
+}
+
+export { auth, db };
 
 // Test connection
 async function testConnection() {

@@ -13,7 +13,7 @@ import { analyzeHealthData } from './services/geminiService';
 import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown } from 'lucide-react';
 import { generatePDF } from './utils/pdfGenerator';
 import { useAuth } from './AuthContext';
-import { db } from './firebase';
+import { db, isFirebaseConfigValid } from './firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
 
 const INITIAL_PATIENT_DATA: PatientData = {
@@ -30,6 +30,34 @@ const INITIAL_PATIENT_DATA: PatientData = {
 // Main Application Component
 export default function App() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
+  
+  // Show configuration error if Firebase is not set up correctly
+  if (!isFirebaseConfigValid && !authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
+        <div className="bg-white p-8 rounded-3xl shadow-xl border border-red-100 max-w-md">
+          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Firebase Configuration Error</h1>
+          <p className="text-slate-600 mb-6 leading-relaxed">
+            The application is missing its Firebase API Key or Project ID. 
+            Please ensure you have set the <strong>VITE_FIREBASE_API_KEY</strong> and <strong>VITE_FIREBASE_PROJECT_ID</strong> environment variables in your Vercel dashboard.
+          </p>
+          <div className="bg-slate-50 p-4 rounded-xl text-left text-xs font-mono text-slate-500 mb-6 break-all">
+            Error: auth/invalid-api-key
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState<'patient' | 'doctor'>('patient');
   const [patientData, setPatientData] = useState<PatientData>(INITIAL_PATIENT_DATA);
   const [symptomFiles, setSymptomFiles] = useState<FileData[]>([]);
