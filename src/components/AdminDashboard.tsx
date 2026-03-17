@@ -41,7 +41,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const handleUpdateRole = async (uid: string, newRole: 'admin' | 'user') => {
+  const handleUpdateRole = async (uid: string, newRole: 'admin' | 'user' | 'student' | 'doctor' | 'hospital') => {
     try {
       await updateDoc(doc(db, 'users', uid), { role: newRole });
     } catch (error) {
@@ -51,10 +51,21 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
   const handleUpdatePlan = async (uid: string, newPlan: SubscriptionPlan) => {
     try {
-      await updateDoc(doc(db, 'users', uid), { 
+      const updates: any = { 
         subscriptionPlan: newPlan,
         subscriptionStatus: newPlan === SubscriptionPlan.Free ? 'free' : 'active'
-      });
+      };
+      
+      // Sync role with plan if not admin
+      const user = users.find(u => u.uid === uid);
+      if (user && user.role !== 'admin') {
+        if (newPlan === SubscriptionPlan.Student) updates.role = 'student';
+        else if (newPlan === SubscriptionPlan.Doctor) updates.role = 'doctor';
+        else if (newPlan === SubscriptionPlan.Hospital) updates.role = 'hospital';
+        else updates.role = 'user';
+      }
+
+      await updateDoc(doc(db, 'users', uid), updates);
     } catch (error) {
       console.error('Error updating plan:', error);
     }
@@ -159,10 +170,13 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                       <td className="py-4">
                         <select 
                           value={user.role}
-                          onChange={(e) => handleUpdateRole(user.uid, e.target.value as 'admin' | 'user')}
+                          onChange={(e) => handleUpdateRole(user.uid, e.target.value as any)}
                           className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select"
                         >
                           <option value="user">User</option>
+                          <option value="student">Student</option>
+                          <option value="doctor">Doctor</option>
+                          <option value="hospital">Hospital</option>
                           <option value="admin">Admin</option>
                         </select>
                       </td>

@@ -23,13 +23,17 @@ Your goal is to analyze patient symptoms, details, and optional visual data (ima
 
 **OUTPUT STRUCTURE (Markdown):**
 1.  **⚠️ Safety Disclaimer**: Standard non-medical advice disclaimer.
-2.  **📋 Summary of Understanding**: Brief recap of patient age, sex, and main complaints (including insights from audio/images).
-3.  **🚨 Triage & Urgency**: Assessment of urgency. Use EXACTLY one of these phrases (translated if needed): "Emergency", "See a doctor soon", or "Likely mild". Explain why.
-4.  **🔍 Possible Explanations**: Differential breakdown of what might be causing the symptoms.
-5.  **📄 Lab/Report Interpretation**: (Only if a report/PDF is provided) Explain findings in simple language. If no report, omit or say "No report provided".
-6.  **🌿 Ayurvedic Lens**: (Only if requested by user) Provide Dosha-based interpretation (Vata/Pitta/Kapha) and general holistic wellness tips. If not requested, OMIT this section entirely.
-7.  **✅ What You Can Do Next**: Actionable steps (e.g., "Monitor X", "Hydrate", "See specialist Y").
-8.  **👨‍⚕️ Doctor Handover Summary**: A concise, professional paragraph the patient can show to their doctor.
+2.  **🩺 Triage & Analysis**: 
+    - **Summary**: Brief recap of patient details and complaints.
+    - **Urgency**: Assessment using EXACTLY one of: "Emergency", "See a doctor soon", or "Likely mild".
+    - **Possible Explanations**: Differential breakdown of suspected causes.
+3.  **🔬 Professional Insights**: 
+    - **Lab/Report Interpretation**: (If provided) Explain findings simply.
+    - **Role-Specific Data**: (For Students/Doctors) Academic pathophysiology or clinical decision support.
+4.  **🌿 Wellness & Guidance**: 
+    - **Ayurvedic Lens**: (If requested) Dosha interpretation and holistic tips.
+    - **Actionable Steps**: What the user can do next (hydrate, monitor, etc.).
+5.  **📋 Doctor Handover**: A concise, professional summary for medical professionals.
 
 **TONE:** Professional, empathetic, clear, and calm.
 `;
@@ -38,7 +42,8 @@ export const analyzeHealthData = async (
   patientData: PatientData,
   symptomFiles: FileData[],
   reportFile: FileData | null,
-  audioData: AudioData | null
+  audioData: AudioData | null,
+  userRole: string = 'user'
 ): Promise<string> => {
   try {
     const apiKey = process.env.API_KEY;
@@ -48,11 +53,36 @@ export const analyzeHealthData = async (
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // Role-specific instructions
+    let roleInstruction = "";
+    if (userRole === 'student') {
+      roleInstruction = `
+      **STUDENT MODE ENABLED:**
+      In the **🔬 Professional Insights** section, you MUST include:
+      - **Pathophysiology**: Explain the mechanism of the top 2 suspected conditions.
+      - **Anatomical Context**: Mention systems/structures involved.
+      - **Pharmacological Concepts**: Explain drug classes commonly used (mechanisms only).
+      - **Learning Points**: 2-3 professional medical insights.
+      `;
+    } else if (userRole === 'doctor' || userRole === 'hospital') {
+      roleInstruction = `
+      **DOCTOR MODE ENABLED:**
+      In the **🔬 Professional Insights** section, you MUST include:
+      - **Clinical Decision Support**: Suggested Diagnostic Tests (Labs/Imaging).
+      - **Management Protocols**: Standard-of-care therapeutic classes.
+      - **ICD-10 Codes**: Suggested codes for primary concerns.
+      - **Clinical Red Flags**: Specific warnings for this patient profile.
+      `;
+    }
+
     // Construct the text prompt
     let promptText = `
     **Analysis Configuration:**
     - preferredLanguage: ${patientData.language}
     - Include Ayurveda: ${patientData.includeAyurveda ? "YES" : "NO"}
+    - User Role: ${userRole}
+
+    ${roleInstruction}
 
     **Patient Details:**
     - Age: ${patientData.age}

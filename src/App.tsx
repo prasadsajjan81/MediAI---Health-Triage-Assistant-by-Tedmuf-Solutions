@@ -250,7 +250,7 @@ export default function App() {
     setAnalysis({ loading: true, result: null, error: null });
 
     try {
-      const result = await analyzeHealthData(patientData, symptomFiles, reportFile, audioData);
+      const result = await analyzeHealthData(patientData, symptomFiles, reportFile, audioData, profile?.role || 'user');
       setAnalysis({ loading: false, result, error: null });
       
       await saveAnalysisRecord(result);

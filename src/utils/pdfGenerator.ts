@@ -1,237 +1,154 @@
 import { jsPDF } from 'jspdf';
-// PDF Generation Utility
+import html2canvas from 'html2canvas';
+// PDF Generation Utility with Multilingual Support
 import { AnalysisRecord } from '../types';
 
-// Helper to clean markdown text
-const stripMarkdown = (text: string): string => {
-  return text
-    .replace(/[\p{S}\p{C}]/gu, "") // remove emojis and symbols
-    .replace(/^#{1,6}\s*/gm, "") // remove headings
-    .replace(/^>\s?/gm, "") // remove blockquotes
-    .replace(/\[(.*?)\]\(.*?\)/g, "$1") // remove links
-    .replace(/[*_`~]/g, "") // remove bold/italic
-    .replace(/^\s*[-+*]\s+/gm, "• ") // normalize bullets
-    .replace(/\n{3,}/g, "\n\n") // collapse newlines
-    .replace(/[ \t]{2,}/g, " ") // trim spaces
-    .trim();
-};
-
-const cleanText = (text: string) => text.replace(/\*\*/g, '').replace(/__/g, '').trim();
-
-// Extract sections from Markdown
-const parseSectionsForPDF = (markdown: string) => {
-  const lines = markdown.split('\n');
-  let triageContent: string[] = [];
-  let summaryContent: string[] = [];
-  let handoverContent: string[] = [];
-  let ayurvedaContent: string[] = [];
-  let nextStepsContent: string[] = [];
-
-  let currentSection = '';
-
-  lines.forEach(line => {
-    const lower = line.toLowerCase();
-    
-    // Detect Section Headers
-    if (line.match(/^(#+|\*\*|🚨|📋|👨‍⚕️|🌿|✅)/)) {
-        if (lower.includes('triage') || lower.includes('urgency')) currentSection = 'triage';
-        else if (lower.includes('summary') && !lower.includes('handover')) currentSection = 'summary';
-        else if (lower.includes('handover') || lower.includes('doctor')) currentSection = 'handover';
-        else if (lower.includes('ayurveda')) currentSection = 'ayurveda';
-        else if (lower.includes('next') || lower.includes('can do')) currentSection = 'nextsteps';
-        else if (lower.includes('safety') || lower.includes('disclaimer')) currentSection = 'safety'; // Ignore
-        else currentSection = 'other';
-    } else if (currentSection && line.trim().length > 0) {
-        if (currentSection === 'triage') triageContent.push(line);
-        if (currentSection === 'summary') summaryContent.push(line);
-        if (currentSection === 'handover') handoverContent.push(line);
-        if (currentSection === 'ayurveda') ayurvedaContent.push(line);
-        if (currentSection === 'nextsteps') nextStepsContent.push(line);
-    }
-  });
-
-  return { triageContent, summaryContent, handoverContent, ayurvedaContent, nextStepsContent };
-};
-
-export const generatePDF = (record: AnalysisRecord) => {
+export const generatePDF = async (record: AnalysisRecord) => {
   try {
-    const doc = new jsPDF({
-      unit: "pt",
-      format: "a4",
+    // Create a temporary container for the report
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '800px';
+    container.style.padding = '40px';
+    container.style.backgroundColor = 'white';
+    container.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
+    container.style.color = '#1e293b';
+    container.className = 'pdf-report-container';
+
+    // Build the HTML content
+    const triageColor = record.triageLevel?.toLowerCase().includes('emergency') ? '#dc2626' : 
+                       (record.triageLevel?.toLowerCase().includes('soon') ? '#ea580c' : '#16a34a');
+
+    container.innerHTML = `
+      <div style="border-bottom: 2px solid #0d9488; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h1 style="margin: 0; color: #0d9488; font-size: 28px; font-weight: 800;">Vishwasini - MediAI</h1>
+          <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Health Triage & AI Assessment Report</p>
+        </div>
+        <div style="text-align: right; color: #94a3b8; font-size: 12px;">
+          Generated: ${new Date(record.createdAt).toLocaleString()}
+        </div>
+      </div>
+
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+        <p style="margin: 0; color: #991b1b; font-size: 12px; line-height: 1.5; font-weight: 600;">
+          ⚠️ MEDICAL DISCLAIMER: Vishwasini - MediAI is an AI assistant, not a doctor. This report is for informational purposes only and is not a medical diagnosis or treatment plan. Always consult a professional.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background-color: #f8fafc; padding: 20px; border-radius: 16px;">
+        <div>
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Patient Basics</h3>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Age/Sex:</strong> ${record.patientAge || 'N/A'} / ${record.patientSex || 'N/A'}</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Duration:</strong> ${record.duration || 'N/A'}</p>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Medical Context</h3>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Conditions:</strong> ${record.conditions || 'None'}</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Medications:</strong> ${record.medications || 'None'}</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 30px; padding: 20px; border-radius: 16px; border: 2px solid ${triageColor}; background-color: ${triageColor}10;">
+        <h2 style="margin: 0; color: ${triageColor}; font-size: 22px; font-weight: 800; text-transform: uppercase;">
+          Triage Level: ${record.triageLevel || 'Unknown'}
+        </h2>
+      </div>
+
+      <div class="markdown-content" style="font-size: 15px; line-height: 1.6; color: #334155;">
+        ${formatMarkdownForHTML(record.markdown)}
+      </div>
+
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px;">
+        This report was generated by Vishwasini - MediAI. ID: ${record.id}
+      </div>
+    `;
+
+    document.body.appendChild(container);
+
+    // Wait for any images or fonts to load
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const canvas = await html2canvas(container, {
+      scale: 2, // Higher quality
+      useCORS: true,
+      logging: false,
+      backgroundColor: 'white',
+      windowWidth: 800
     });
 
-    let y = 40;
-    const margin = 40;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - (margin * 2);
-
-    // Helpers
-    const checkPageBreak = (needed: number) => {
-      if (y + needed > 800) {
-        doc.addPage();
-        y = 40;
-      }
-    };
-
-    const drawSeparator = () => {
-      y += 10;
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 20;
-    };
-
-    // 1. Header
-    doc.setFontSize(18);
-    doc.setTextColor(13, 148, 136); // Teal
-    doc.setFont("helvetica", "bold");
-    doc.text("Vishwasini - MediAI – Health Triage Report", margin, y);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${new Date(record.createdAt).toLocaleString()}`, pageWidth - margin, y, { align: 'right' });
-    y += 25;
-
-    // 2. Safety Disclaimer
-    doc.setFontSize(9);
-    doc.setTextColor(220, 38, 38); // Red
-    doc.setFont("helvetica", "bold");
-    const disclaimer = "Vishwasini - MediAI is an AI assistant, not a doctor. This report is for informational purposes only and is not a medical diagnosis or treatment plan. Always consult a professional.";
-    const splitDisclaimer = doc.splitTextToSize(disclaimer, contentWidth);
-    doc.text(splitDisclaimer, margin, y);
-    y += (splitDisclaimer.length * 10) + 10;
-
-    drawSeparator();
-
-    // 3. Patient Basics
-    checkPageBreak(80);
-    doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.setFont("helvetica", "bold");
-    doc.text("Patient Basics", margin, y);
-    y += 15;
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    const basics = [
-      `Age/Sex: ${record.patientAge || 'N/A'} / ${record.patientSex || 'N/A'}`,
-      `Duration: ${record.duration || 'N/A'}`,
-      `Conditions: ${record.conditions || 'None'}`,
-      `Medications: ${record.medications || 'None'}`
-    ];
-    
-    basics.forEach(line => {
-      doc.text(`• ${line}`, margin + 10, y);
-      y += 12;
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4'
     });
 
-    drawSeparator();
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    // Parse Sections
-    const { triageContent, summaryContent, handoverContent, ayurvedaContent, nextStepsContent } = parseSectionsForPDF(record.markdown);
+    // Handle multi-page
+    let heightLeft = pdfHeight;
+    let position = 0;
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
-    // 4. Triage Level
-    if (record.triageLevel) {
-        checkPageBreak(50);
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        
-        const level = record.triageLevel.toLowerCase();
-        if (level.includes('emergency')) doc.setTextColor(220, 38, 38);
-        else if (level.includes('soon')) doc.setTextColor(234, 88, 12);
-        else if (level.includes('mild')) doc.setTextColor(22, 163, 74);
-        else doc.setTextColor(0);
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+    heightLeft -= pageHeight;
 
-        doc.text(`Triage Level: ${record.triageLevel}`, margin, y);
-        y += 20;
-
-        // Content
-        if (triageContent.length > 0) {
-            doc.setFontSize(10);
-            doc.setTextColor(0);
-            doc.setFont("helvetica", "normal");
-            const text = stripMarkdown(triageContent.join('\n'));
-            const split = doc.splitTextToSize(text, contentWidth);
-            doc.text(split, margin, y);
-            y += (split.length * 12) + 10;
-        }
-        drawSeparator();
+    while (heightLeft >= 0) {
+      position = heightLeft - pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
     }
 
-    // 5. Quick Summary
-    if (summaryContent.length > 0) {
-        checkPageBreak(60);
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.setFont("helvetica", "bold");
-        doc.text("Quick Summary", margin, y);
-        y += 15;
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const text = stripMarkdown(summaryContent.join('\n'));
-        const split = doc.splitTextToSize(text, contentWidth);
-        doc.text(split, margin, y);
-        y += (split.length * 12) + 10;
-    }
-
-    // 6. Doctor Handover
-    if (handoverContent.length > 0) {
-        drawSeparator();
-        checkPageBreak(60);
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("Doctor Handover Summary", margin, y);
-        y += 15;
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const text = stripMarkdown(handoverContent.join('\n'));
-        const split = doc.splitTextToSize(text, contentWidth);
-        doc.text(split, margin, y);
-        y += (split.length * 12) + 10;
-    }
+    pdf.save(`Vishwasini-MediAI-Report-${record.id.slice(0, 8)}.pdf`);
     
-    // 7. Recommended Actions
-    if (nextStepsContent.length > 0) {
-        drawSeparator();
-        checkPageBreak(60);
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("Recommended Actions", margin, y);
-        y += 15;
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const text = stripMarkdown(nextStepsContent.join('\n'));
-        const split = doc.splitTextToSize(text, contentWidth);
-        doc.text(split, margin, y);
-        y += (split.length * 12) + 10;
-    }
-
-    // 8. Ayurvedic (Optional)
-    if (ayurvedaContent.length > 0) {
-        drawSeparator();
-        checkPageBreak(60);
-        doc.setFontSize(12);
-        doc.setTextColor(21, 128, 61); // Green
-        doc.setFont("helvetica", "bold");
-        doc.text("Ayurvedic Overview", margin, y);
-        y += 15;
-
-        doc.setFontSize(10);
-        doc.setTextColor(0);
-        doc.setFont("helvetica", "normal");
-        const text = stripMarkdown(ayurvedaContent.join('\n'));
-        const split = doc.splitTextToSize(text, contentWidth);
-        doc.text(split, margin, y);
-    }
-
-    doc.save(`Vishwasini-MediAI-Report-${record.id.slice(0, 8)}.pdf`);
+    // Cleanup
+    document.body.removeChild(container);
 
   } catch (error) {
     console.error("PDF Generation failed", error);
-    alert("Failed to generate PDF");
+    alert("Failed to generate PDF. Please try again.");
   }
+};
+
+// Simple markdown to HTML formatter for the PDF
+const formatMarkdownForHTML = (markdown: string): string => {
+  return markdown
+    .split('\n')
+    .map(line => {
+      line = line.trim();
+      if (!line) return '<br/>';
+      
+      // Headers
+      if (line.startsWith('###')) return `<h3 style="color: #0f172a; margin-top: 20px; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">${line.replace(/^###\s*/, '')}</h3>`;
+      if (line.startsWith('##')) return `<h2 style="color: #0f172a; margin-top: 25px; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">${line.replace(/^##\s*/, '')}</h2>`;
+      if (line.startsWith('#')) return `<h1 style="color: #0d9488; margin-top: 30px; margin-bottom: 20px; font-size: 24px;">${line.replace(/^#\s*/, '')}</h1>`;
+      
+      // Bold
+      line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Bullets
+      if (line.startsWith('- ') || line.startsWith('* ')) {
+        return `<div style="margin-left: 20px; margin-bottom: 5px; display: flex;"><span style="margin-right: 10px; color: #0d9488;">•</span><span>${line.substring(2)}</span></div>`;
+      }
+      
+      // Numbered lists
+      if (line.match(/^\d+\.\s/)) {
+        const num = line.match(/^\d+/)?.[0];
+        return `<div style="margin-left: 20px; margin-bottom: 5px; display: flex;"><span style="margin-right: 10px; color: #0d9488; font-weight: bold;">${num}.</span><span>${line.replace(/^\d+\.\s/, '')}</span></div>`;
+      }
+
+      // Blockquotes (Disclaimers)
+      if (line.startsWith('>')) {
+        return `<div style="border-left: 4px solid #cbd5e1; padding-left: 15px; color: #64748b; font-style: italic; margin: 15px 0;">${line.substring(1).trim()}</div>`;
+      }
+
+      return `<p style="margin: 8px 0;">${line}</p>`;
+    })
+    .join('');
 };

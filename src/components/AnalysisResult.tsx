@@ -17,7 +17,10 @@ import {
   Volume2,
   StopCircle,
   FileDown,
-  ArrowLeft
+  ArrowLeft,
+  GraduationCap,
+  BriefcaseMedical,
+  Microscope
 } from 'lucide-react';
 import { Language, PatientData, AnalysisRecord } from '../types';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -58,21 +61,18 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
     const getIconForTitle = (title: string) => {
       const lower = title.toLowerCase();
       if (lower.includes('safety')) return <AlertCircle className="text-red-500" />;
-      if (lower.includes('summary')) return <ClipboardList className="text-blue-500" />;
-      if (lower.includes('triage')) return <AlertTriangle className="text-orange-500" />;
-      if (lower.includes('explanation') || lower.includes('differential')) return <Stethoscope className="text-teal-500" />;
-      if (lower.includes('report') || lower.includes('lab')) return <FileText className="text-purple-500" />;
-      if (lower.includes('ayurveda') || lower.includes('ayurvedic')) return <Leaf className="text-green-500" />;
-      if (lower.includes('next') || lower.includes('can do')) return <Navigation className="text-indigo-500" />;
+      if (lower.includes('triage') || lower.includes('analysis')) return <Stethoscope className="text-teal-500" />;
+      if (lower.includes('professional') || lower.includes('insight') || lower.includes('clinical') || lower.includes('academic')) return <Microscope className="text-purple-500" />;
+      if (lower.includes('wellness') || lower.includes('guidance') || lower.includes('ayurveda')) return <Leaf className="text-green-500" />;
       if (lower.includes('doctor') || lower.includes('handover')) return <ClipboardCheck className="text-slate-600" />;
       return <Activity className="text-slate-500" />;
     };
 
     lines.forEach((line) => {
-      if (line.match(/^(#+|\*\*|📋|🚦|🔍|🎯|📄|🌿|🧭|👨‍⚕️)/) && line.length < 100 && line.trim().length > 3) {
+      if (line.match(/^(#+|\*\*|⚠️|🩺|🔬|🌿|📋)/) && line.length < 100 && line.trim().length > 3) {
         if (currentSection) sections.push(currentSection);
         
-        const title = line.replace(/^[#\d\.\s\*📋🚦🔍🎯📄🌿🧭👨‍⚕️]+/, '').replace(/[\*:]+$/g, '').trim();
+        const title = line.replace(/^[#\d\.\s\*⚠️🩺🔬🌿📋]+/, '').replace(/[\*:]+$/g, '').trim();
         currentSection = {
           title: title || "Section",
           content: "",
@@ -107,7 +107,10 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleDownloadPDF = () => {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
     const record: AnalysisRecord = {
       id: recordId || 'live',
       createdAt: new Date().toISOString(),
@@ -119,7 +122,8 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
       triageLevel: triageLevel,
       markdown: markdown
     };
-    generatePDF(record);
+    await generatePDF(record);
+    setIsGeneratingPDF(false);
   };
 
   return (
@@ -150,8 +154,12 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
             </div>
           </div>
           <div className="flex space-x-2">
-            <button onClick={handleDownloadPDF} className="p-2 bg-white text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all">
-              <FileDown size={20} />
+            <button 
+              onClick={handleDownloadPDF} 
+              disabled={isGeneratingPDF}
+              className={`p-2 rounded-xl border shadow-sm transition-all ${isGeneratingPDF ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+            >
+              <FileDown size={20} className={isGeneratingPDF ? 'animate-bounce' : ''} />
             </button>
             <button onClick={isSpeaking ? () => window.speechSynthesis.cancel() : handleSpeak} className={`p-2 rounded-xl border shadow-sm transition-all ${isSpeaking ? 'bg-red-500 text-white border-red-400' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
               {isSpeaking ? <StopCircle size={20} /> : <Volume2 size={20} />}
