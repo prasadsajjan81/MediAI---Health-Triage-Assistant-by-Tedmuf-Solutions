@@ -2,26 +2,16 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
-// Firebase configuration from environment variables (injected by Vite)
-declare const __FIREBASE_CONFIG__: any;
-
-const getInjectedConfig = () => {
-  if (typeof __FIREBASE_CONFIG__ !== 'undefined') {
-    return __FIREBASE_CONFIG__;
-  }
-  return null;
-};
-
-const injectedConfig = getInjectedConfig();
+import { config } from './config';
 
 const firebaseConfig = {
-  apiKey: (injectedConfig?.apiKey || import.meta.env.VITE_FIREBASE_API_KEY || '').trim(),
-  authDomain: (injectedConfig?.authDomain || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '').trim(),
-  projectId: (injectedConfig?.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID || '').trim(),
-  storageBucket: (injectedConfig?.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '').trim(),
-  messagingSenderId: (injectedConfig?.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '').trim(),
-  appId: (injectedConfig?.appId || import.meta.env.VITE_FIREBASE_APP_ID || '').trim(),
-  firestoreDatabaseId: (injectedConfig?.firestoreDatabaseId || import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '').trim(),
+  apiKey: (config.apiKey || import.meta.env.VITE_FIREBASE_API_KEY || '').trim(),
+  authDomain: (config.authDomain || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '').trim(),
+  projectId: (config.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID || '').trim(),
+  storageBucket: (config.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '').trim(),
+  messagingSenderId: (config.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '').trim(),
+  appId: (config.appId || import.meta.env.VITE_FIREBASE_APP_ID || '').trim(),
+  firestoreDatabaseId: (config.firestoreDatabaseId || import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '').trim(),
 };
 
 console.log("Firebase Config Status:", {
@@ -29,7 +19,7 @@ console.log("Firebase Config Status:", {
   apiKeyPrefix: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 5)}...` : 'None',
   projectId: firebaseConfig.projectId,
   databaseId: firebaseConfig.firestoreDatabaseId,
-  source: injectedConfig ? 'Injected' : 'Env',
+  source: config.apiKey ? 'Config File' : 'Env',
   timestamp: new Date().toISOString()
 });
 

@@ -79,10 +79,9 @@ const INITIAL_PATIENT_DATA: PatientData = {
   includeAyurveda: false,
 };
 
-// Main Application Component
-// Firebase configuration from environment variables (injected by Vite)
-declare const __FIREBASE_CONFIG__: any;
+import { config } from './config';
 
+// Main Application Component
 export default function App() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
   
@@ -102,9 +101,9 @@ export default function App() {
           <div className="bg-slate-50 p-4 rounded-xl text-left text-xs font-mono text-slate-500 mb-6 break-all">
             {initError || 'Check the browser console for more details.'}
             <br />
-            Config Source: {typeof __FIREBASE_CONFIG__ !== 'undefined' ? 'Injected' : (!!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'None')}
+            Config Source: {config.apiKey ? 'Config File' : (!!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'None')}
             <br />
-            API Key: {typeof __FIREBASE_CONFIG__ !== 'undefined' && __FIREBASE_CONFIG__?.apiKey ? `${__FIREBASE_CONFIG__.apiKey.substring(0, 5)}...` : (import.meta.env.VITE_FIREBASE_API_KEY ? `${import.meta.env.VITE_FIREBASE_API_KEY.substring(0, 5)}...` : 'Missing')}
+            API Key: {config.apiKey ? `${config.apiKey.substring(0, 5)}...` : (import.meta.env.VITE_FIREBASE_API_KEY ? `${import.meta.env.VITE_FIREBASE_API_KEY.substring(0, 5)}...` : 'Missing')}
             <br />
             Updated: {new Date().toLocaleTimeString()}
           </div>
