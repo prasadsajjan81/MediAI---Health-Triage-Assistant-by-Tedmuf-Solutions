@@ -2,17 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
-// Firebase configuration from environment variables (injected by Vite) or fallback to JSON file
-import firebaseConfigJson from './firebase-applet-config.json';
-
+// Firebase configuration from environment variables (injected by Vite)
 const firebaseConfig = {
-  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson?.apiKey || '').trim(),
-  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson?.authDomain || '').trim(),
-  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson?.projectId || '').trim(),
-  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson?.storageBucket || '').trim(),
-  messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson?.messagingSenderId || '').trim(),
-  appId: (import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson?.appId || '').trim(),
-  firestoreDatabaseId: (import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson?.firestoreDatabaseId || '').trim(),
+  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || '').trim(),
+  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '').trim(),
+  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || '').trim(),
+  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '').trim(),
+  messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '').trim(),
+  appId: (import.meta.env.VITE_FIREBASE_APP_ID || '').trim(),
+  firestoreDatabaseId: (import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '').trim(),
 };
 
 console.log("Firebase Config Status:", {
