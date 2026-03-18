@@ -1,12 +1,12 @@
 
-import firebaseConfig from './firebase-applet-config.json';
+import { firebaseAppletConfig } from './firebase-config';
 
 export const config = {
-  apiKey: firebaseConfig.apiKey || '',
-  authDomain: firebaseConfig.authDomain || '',
-  projectId: firebaseConfig.projectId || '',
-  storageBucket: firebaseConfig.storageBucket || '',
-  messagingSenderId: firebaseConfig.messagingSenderId || '',
-  appId: firebaseConfig.appId || '',
-  firestoreDatabaseId: firebaseConfig.firestoreDatabaseId || '',
+  apiKey: firebaseAppletConfig.apiKey || '',
+  authDomain: firebaseAppletConfig.authDomain || '',
+  projectId: firebaseAppletConfig.projectId || '',
+  storageBucket: firebaseAppletConfig.storageBucket || '',
+  messagingSenderId: firebaseAppletConfig.messagingSenderId || '',
+  appId: firebaseAppletConfig.appId || '',
+  firestoreDatabaseId: firebaseAppletConfig.firestoreDatabaseId || '',
 };

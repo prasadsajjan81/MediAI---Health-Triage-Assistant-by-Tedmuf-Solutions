@@ -23,38 +23,16 @@ export default defineConfig(({ mode }) => {
       firestoreDatabaseId: ''
     };
 
-    const configPaths = [
-      path.join(process.cwd(), 'src', 'firebase-applet-config.json'),
-      path.join(process.cwd(), 'firebase-applet-config.json'),
-      path.resolve(__dirname, 'src', 'firebase-applet-config.json'),
-      path.resolve(__dirname, 'firebase-applet-config.json'),
-    ];
-
-    console.log('Vite Build: Checking config paths:', configPaths);
-
-    for (const configPath of configPaths) {
-      if (fs.existsSync(configPath)) {
-        try {
-          const fileContent = fs.readFileSync(configPath, 'utf-8');
-          const fileConfig = JSON.parse(fileContent);
-          firebaseConfig = { ...firebaseConfig, ...fileConfig };
-          console.log(`Vite Build: Successfully loaded config from ${configPath}`);
-          console.log(`Vite Build: API Key found: ${!!firebaseConfig.apiKey}`);
-          break;
-        } catch (e) {
-          console.error(`Vite Build: Error parsing ${configPath}:`, e);
-        }
-      }
-    }
-
+    // Firebase configuration is now handled via src/firebase-config.ts
+    // This simplifies the build process and avoids JSON resolution issues.
     const finalConfig = {
-      apiKey: env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY || firebaseConfig.apiKey || '',
-      authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || env.FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain || '',
-      projectId: env.VITE_FIREBASE_PROJECT_ID || env.FIREBASE_PROJECT_ID || firebaseConfig.projectId || '',
-      storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || env.FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket || '',
-      messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || env.FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId || '',
-      appId: env.VITE_FIREBASE_APP_ID || env.FIREBASE_APP_ID || firebaseConfig.appId || '',
-      firestoreDatabaseId: env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || env.FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || '',
+      apiKey: env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY || '',
+      authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || env.FIREBASE_AUTH_DOMAIN || '',
+      projectId: env.VITE_FIREBASE_PROJECT_ID || env.FIREBASE_PROJECT_ID || '',
+      storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || env.FIREBASE_STORAGE_BUCKET || '',
+      messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || env.FIREBASE_MESSAGING_SENDER_ID || '',
+      appId: env.VITE_FIREBASE_APP_ID || env.FIREBASE_APP_ID || '',
+      firestoreDatabaseId: env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || env.FIREBASE_FIRESTORE_DATABASE_ID || '',
     };
 
     console.log('Vite Build: Final Firebase Config API Key present:', !!finalConfig.apiKey);
