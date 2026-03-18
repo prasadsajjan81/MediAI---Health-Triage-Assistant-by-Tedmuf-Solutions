@@ -13,7 +13,7 @@ import { analyzeHealthData } from './services/geminiService';
 import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown, RefreshCcw, GraduationCap } from 'lucide-react';
 import { generatePDF } from './utils/pdfGenerator';
 import { useAuth } from './AuthContext';
-import { db, isFirebaseConfigValid, handleFirestoreError, OperationType } from './firebase';
+import { db, isFirebaseConfigValid, handleFirestoreError, OperationType, initError } from './firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
 
 // Error Boundary Component
@@ -84,7 +84,7 @@ export default function App() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
   
   // Show configuration error if Firebase is not set up correctly
-  if (!isFirebaseConfigValid && !authLoading) {
+  if ((!isFirebaseConfigValid || initError) && !authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
         <div className="bg-white p-8 rounded-3xl shadow-xl border border-red-100 max-w-md">
@@ -97,7 +97,9 @@ export default function App() {
             Please ensure you have set the <strong>VITE_FIREBASE_API_KEY</strong> and <strong>VITE_FIREBASE_PROJECT_ID</strong> environment variables in your Vercel dashboard.
           </p>
           <div className="bg-slate-50 p-4 rounded-xl text-left text-xs font-mono text-slate-500 mb-6 break-all">
-            Error: auth/invalid-api-key
+            {initError || 'Check the browser console for more details.'}
+            <br />
+            Firebase Config Source: {!!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'JSON'}
           </div>
           <button 
             onClick={() => window.location.reload()}

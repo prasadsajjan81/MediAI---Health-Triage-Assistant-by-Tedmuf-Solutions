@@ -2,33 +2,48 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
-// Firebase configuration from environment variables (injected by Vite)
+// Firebase configuration from environment variables (injected by Vite) or fallback to JSON file
+import firebaseConfigJson from './firebase-applet-config.json';
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID,
+  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson?.apiKey || '').trim(),
+  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson?.authDomain || '').trim(),
+  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson?.projectId || '').trim(),
+  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson?.storageBucket || '').trim(),
+  messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson?.messagingSenderId || '').trim(),
+  appId: (import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson?.appId || '').trim(),
+  firestoreDatabaseId: (import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson?.firestoreDatabaseId || '').trim(),
 };
+
+console.log("Firebase Config Status:", {
+  hasApiKey: !!firebaseConfig.apiKey,
+  projectId: firebaseConfig.projectId,
+  databaseId: firebaseConfig.firestoreDatabaseId,
+  source: !!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'JSON'
+});
 
 // Initialize Firebase safely
 let app: any;
 let auth: any;
 let db: any;
+let initError: string | null = null;
 
-export const isFirebaseConfigValid = !!firebaseConfig.apiKey;
+export const isFirebaseConfigValid = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('TODO');
 
 try {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
-} catch (error) {
+  if (isFirebaseConfigValid) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+  } else {
+    initError = "Firebase API Key is missing or is a placeholder (TODO).";
+  }
+} catch (error: any) {
   console.error("Error initializing Firebase:", error);
+  initError = error.message;
 }
 
-export { auth, db };
+export { auth, db, initError };
 
 // Error handling for Firestore permissions
 export enum OperationType {
