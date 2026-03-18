@@ -105,6 +105,8 @@ export default function App() {
             Config Source: {typeof __FIREBASE_CONFIG__ !== 'undefined' ? 'Injected' : (!!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'None')}
             <br />
             API Key: {typeof __FIREBASE_CONFIG__ !== 'undefined' && __FIREBASE_CONFIG__?.apiKey ? `${__FIREBASE_CONFIG__.apiKey.substring(0, 5)}...` : (import.meta.env.VITE_FIREBASE_API_KEY ? `${import.meta.env.VITE_FIREBASE_API_KEY.substring(0, 5)}...` : 'Missing')}
+            <br />
+            Updated: {new Date().toLocaleTimeString()}
           </div>
           <button 
             onClick={() => window.location.reload()}
