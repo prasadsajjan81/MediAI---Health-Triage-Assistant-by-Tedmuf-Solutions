@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
               {isAdmin && (
                 <button 
                   onClick={() => setIsAdminOpen(true)}
-                  className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-full transition-all"
+                  className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-full transition-all cursor-pointer"
                   title="Admin Dashboard"
                 >
                   <Shield size={20} />
@@ -79,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
               {!planLabel && !isAdmin && (
                 <button 
                   onClick={onOpenSubscription}
-                  className="hidden md:flex items-center bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 text-xs font-bold hover:bg-teal-100 transition-colors"
+                  className="hidden md:flex items-center bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 text-xs font-bold hover:bg-teal-100 transition-colors cursor-pointer"
                 >
                   Upgrade
                 </button>
@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
                 </div>
                 <button 
                   onClick={() => signOut(auth)}
-                  className="ml-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
+                  className="ml-2 p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                   title="Sign Out"
                 >
                   <LogOut size={16} />
@@ -106,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
           ) : (
             <button 
               onClick={onOpenAuth}
-              className="flex items-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-600/20"
+              className="flex items-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-teal-600/20 cursor-pointer"
             >
               <LogIn size={18} />
               <span>Sign In</span>

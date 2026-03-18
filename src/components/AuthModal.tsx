@@ -66,7 +66,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {isLogin ? <LogIn className="mr-2" size={20} /> : <UserPlus className="mr-2" size={20} />}
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-teal-100 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-teal-100 rounded-full transition-colors cursor-pointer">
             <X size={20} className="text-teal-700" />
           </button>
         </div>
@@ -129,7 +129,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-600/20 transition-all flex items-center justify-center"
+              className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-600/20 transition-all flex items-center justify-center cursor-pointer"
             >
               {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
             </button>
@@ -147,7 +147,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-3 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold text-slate-700 transition-all flex items-center justify-center space-x-2"
+            className="w-full py-3 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold text-slate-700 transition-all flex items-center justify-center space-x-2 cursor-pointer"
           >
             <Chrome size={20} className="text-blue-500" />
             <span>Google Account</span>
@@ -157,7 +157,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {isLogin ? "Don't have an account?" : "Already have an account?"}
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="ml-1 text-teal-600 font-bold hover:underline"
+              className="ml-1 text-teal-600 font-bold hover:underline cursor-pointer"
             >
               {isLogin ? 'Sign Up' : 'Sign In'}
             </button>

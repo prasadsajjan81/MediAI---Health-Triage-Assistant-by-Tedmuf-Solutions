@@ -72,7 +72,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {symptomFiles.length < 3 && (
               <button 
                 onClick={() => symptomInputRef.current?.click()}
-                className="flex-shrink-0 w-28 h-28 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-teal-500 hover:text-teal-500 hover:bg-teal-50/50 transition-all group"
+                className="flex-shrink-0 w-28 h-28 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-teal-500 hover:text-teal-500 hover:bg-teal-50/50 transition-all group cursor-pointer"
               >
                 <div className="bg-slate-100 p-2 rounded-full mb-2 group-hover:bg-white transition-colors">
                   <Camera size={20} />
@@ -92,7 +92,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 {/* Remove Button */}
                 <button 
                   onClick={() => removeSymptomFile(idx)}
-                  className="absolute top-1 right-1 bg-white/90 text-slate-600 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white transform hover:scale-105"
+                  className="absolute top-1 right-1 bg-white/90 text-slate-600 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white transform hover:scale-105 cursor-pointer"
                   title="Remove image"
                 >
                   <X size={14} />
@@ -129,7 +129,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {!reportFile ? (
               <button 
                 onClick={() => reportInputRef.current?.click()}
-                className="w-full h-28 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-500 hover:border-teal-500 hover:text-teal-500 hover:bg-teal-50/50 transition-all bg-slate-50/50"
+                className="w-full h-28 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-500 hover:border-teal-500 hover:text-teal-500 hover:bg-teal-50/50 transition-all bg-slate-50/50 cursor-pointer"
               >
                 <FileText size={24} className="mb-2 opacity-70" />
                 <span className="text-sm font-medium">Upload Report</span>
@@ -147,7 +147,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
                 <button 
                   onClick={removeReportFile} 
-                  className="absolute top-2 right-2 p-1.5 bg-white text-slate-400 hover:text-red-500 rounded-lg shadow-sm border border-slate-100 opacity-0 group-hover:opacity-100 transition-all"
+                  className="absolute top-2 right-2 p-1.5 bg-white text-slate-400 hover:text-red-500 rounded-lg shadow-sm border border-slate-100 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                 >
                   <X size={16} />
                 </button>

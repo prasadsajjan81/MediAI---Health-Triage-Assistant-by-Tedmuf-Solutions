@@ -65,7 +65,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectReco
                 <select 
                    value={filterTriage}
                    onChange={(e) => setFilterTriage(e.target.value)}
-                   className="pl-10 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none bg-white form-select"
+                   className="pl-10 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none bg-white form-select cursor-pointer"
                 >
                     <option value="All">All Levels</option>
                     <option value="Emergency">Emergency</option>
@@ -108,7 +108,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectReco
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {filteredHistory.map((record) => (
-                            <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
+                            <tr 
+                              key={record.id} 
+                              className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                              onClick={() => onSelectRecord(record)}
+                            >
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-2">
                                         <Calendar size={14} className="text-slate-400" />
@@ -138,15 +142,21 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectReco
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <button 
-                                          onClick={() => onSelectRecord(record)}
-                                          className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onSelectRecord(record);
+                                          }}
+                                          className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
                                           title="View Details"
                                         >
                                             <Eye size={18} />
                                         </button>
                                         <button 
-                                          onClick={() => onDownloadPdf(record)}
-                                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDownloadPdf(record);
+                                          }}
+                                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                           title="Download PDF"
                                         >
                                             <FileDown size={18} />

@@ -55,7 +55,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
             </p>
             <button 
               onClick={() => window.location.reload()}
-              className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-center"
+              className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-center cursor-pointer"
             >
               <RefreshCcw size={18} className="mr-2" /> Reload Application
             </button>
@@ -309,7 +309,7 @@ export default function App() {
             <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
               <button 
                 onClick={() => setActiveTab('patient')}
-                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'patient' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === 'patient' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 <User size={16} className="mr-2" /> Patient View
               </button>
@@ -317,7 +317,7 @@ export default function App() {
               {(isAdmin || isDoctor || isHospital || isStudent) && (
                 <button 
                   onClick={() => setActiveTab('doctor')}
-                  className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                  className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
                 >
                   {isStudent ? (
                     <>
@@ -362,7 +362,7 @@ export default function App() {
                   </div>
                   <button 
                     onClick={() => setIsSubscriptionModalOpen(true)}
-                    className="px-6 py-2 bg-white text-teal-600 font-bold rounded-xl hover:bg-teal-50 transition-all transform hover:scale-105"
+                    className="px-6 py-2 bg-white text-teal-600 font-bold rounded-xl hover:bg-teal-50 transition-all transform hover:scale-105 cursor-pointer"
                   >
                     Upgrade to Pro
                   </button>
@@ -420,7 +420,7 @@ export default function App() {
                   onClick={handleAnalyze}
                   disabled={analysis.loading}
                   className={`w-full max-w-md mx-auto py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0
-                    ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600'}`}
+                    ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 cursor-pointer'}`}
                 >
                   {analysis.loading ? (
                     <>
@@ -449,7 +449,7 @@ export default function App() {
                       setAnalysis({ loading: false, result: null, error: null });
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="mt-8 w-full max-w-md mx-auto py-4 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center"
+                    className="mt-8 w-full max-w-md mx-auto py-4 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
                   >
                     Start New Analysis
                   </button>

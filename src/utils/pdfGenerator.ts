@@ -7,14 +7,16 @@ export const generatePDF = async (record: AnalysisRecord) => {
   try {
     // Create a temporary container for the report
     const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
+    container.style.position = 'fixed';
+    container.style.left = '-9999px'; // Move far off-screen instead of visibility: hidden
     container.style.top = '0';
     container.style.width = '800px';
     container.style.padding = '40px';
     container.style.backgroundColor = 'white';
     container.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
     container.style.color = '#1e293b';
+    container.style.zIndex = '9999';
+    container.style.visibility = 'visible'; // Must be visible for some capture engines
     container.className = 'pdf-report-container';
 
     // Build the HTML content
@@ -69,13 +71,15 @@ export const generatePDF = async (record: AnalysisRecord) => {
     document.body.appendChild(container);
 
     // Wait for any images or fonts to load
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const imgData = await toPng(container, {
-      quality: 0.95,
-      pixelRatio: 2,
+      quality: 0.9,
+      pixelRatio: 1.5,
       backgroundColor: 'white',
-      width: 800
+      width: 800,
+      cacheBust: true,
+      skipFonts: false
     });
 
     const pdf = new jsPDF({

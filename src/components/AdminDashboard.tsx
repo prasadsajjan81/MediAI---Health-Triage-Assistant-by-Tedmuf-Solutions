@@ -112,12 +112,12 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => setIsAddingUser(true)}
-              className="flex items-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all"
+              className="flex items-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer"
             >
               <UserPlus size={18} />
               <span>Add User</span>
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors cursor-pointer">
               <X size={20} className="text-slate-600" />
             </button>
           </div>
@@ -171,7 +171,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                         <select 
                           value={user.role}
                           onChange={(e) => handleUpdateRole(user.uid, e.target.value as any)}
-                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select"
+                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select cursor-pointer"
                         >
                           <option value="user">User</option>
                           <option value="student">Student</option>
@@ -184,7 +184,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                         <select 
                           value={user.subscriptionPlan}
                           onChange={(e) => handleUpdatePlan(user.uid, e.target.value as SubscriptionPlan)}
-                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select"
+                          className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select cursor-pointer"
                         >
                           <option value={SubscriptionPlan.Free}>Free</option>
                           <option value={SubscriptionPlan.Student}>Student</option>
@@ -202,7 +202,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                       <td className="py-4 text-right pr-2">
                         <button 
                           onClick={() => handleDeleteUser(user.uid)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                           title="Delete User"
                         >
                           <Trash2 size={18} />
@@ -221,7 +221,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
             <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-slate-900">Add New User</h3>
-                <button onClick={() => setIsAddingUser(false)} className="p-2 hover:bg-slate-100 rounded-full">
+                <button onClick={() => setIsAddingUser(false)} className="p-2 hover:bg-slate-100 rounded-full cursor-pointer">
                   <X size={20} className="text-slate-400" />
                 </button>
               </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                     <select 
                       value={newUser.role}
                       onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'user'})}
-                      className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select"
+                      className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select cursor-pointer"
                     >
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
@@ -263,7 +263,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                     <select 
                       value={newUser.subscriptionPlan}
                       onChange={(e) => setNewUser({...newUser, subscriptionPlan: e.target.value as SubscriptionPlan})}
-                      className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select"
+                      className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select cursor-pointer"
                     >
                       <option value={SubscriptionPlan.Free}>Free</option>
                       <option value={SubscriptionPlan.Student}>Student</option>
@@ -274,7 +274,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                 </div>
                 <button 
                   type="submit"
-                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-600/20 transition-all mt-4"
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-600/20 transition-all mt-4 cursor-pointer"
                 >
                   Create User Profile
                 </button>

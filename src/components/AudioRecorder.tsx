@@ -209,7 +209,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={startRecording}
-            className="relative overflow-hidden flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 rounded-2xl hover:border-teal-500 hover:bg-teal-50/50 transition-all group"
+            className="relative overflow-hidden flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 rounded-2xl hover:border-teal-500 hover:bg-teal-50/50 transition-all group cursor-pointer"
           >
             <div className="bg-teal-100 p-4 rounded-full text-teal-600 mb-3 group-hover:scale-110 transition-transform duration-300">
               <Mic size={28} />
@@ -220,7 +220,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 rounded-2xl hover:border-teal-500 hover:bg-teal-50/50 transition-all group"
+            className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 rounded-2xl hover:border-teal-500 hover:bg-teal-50/50 transition-all group cursor-pointer"
           >
              <div className="bg-slate-100 p-4 rounded-full text-slate-600 mb-3 group-hover:scale-110 transition-transform duration-300">
               <Upload size={28} />
@@ -253,7 +253,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
              </p>
              <button
                onClick={stopRecording}
-               className="flex items-center space-x-2 bg-red-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg shadow-red-500/30"
+               className="flex items-center space-x-2 bg-red-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg shadow-red-500/30 cursor-pointer"
              >
                <Square size={18} fill="currentColor" />
                <span>Stop Recording</span>
@@ -277,7 +277,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
            <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
              <button
                onClick={togglePlayback}
-               className={`flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${isPlaying ? 'bg-teal-200 text-teal-800' : 'bg-white text-teal-700 hover:bg-teal-100'}`}
+               className={`flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${isPlaying ? 'bg-teal-200 text-teal-800' : 'bg-white text-teal-700 hover:bg-teal-100'}`}
              >
                {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
                <span className="text-sm">{isPlaying ? 'Pause' : 'Play'}</span>
@@ -287,7 +287,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
 
              <button
                onClick={deleteAudio}
-               className="flex items-center justify-center p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+               className="flex items-center justify-center p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                title="Re-record (Delete current)"
              >
                <RefreshCw size={20} />
@@ -295,7 +295,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
              
              <button 
                onClick={deleteAudio}
-               className="flex items-center justify-center p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+               className="flex items-center justify-center p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                title="Delete"
              >
                 <X size={20} />

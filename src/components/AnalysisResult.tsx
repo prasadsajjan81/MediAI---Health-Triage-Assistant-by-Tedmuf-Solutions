@@ -129,7 +129,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {onBack && (
-        <button onClick={onBack} className="flex items-center text-slate-500 hover:text-slate-800 transition-colors">
+        <button onClick={onBack} className="flex items-center text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
           <ArrowLeft size={18} className="mr-1" /> Back to Dashboard
         </button>
       )}
@@ -157,11 +157,11 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
             <button 
               onClick={handleDownloadPDF} 
               disabled={isGeneratingPDF}
-              className={`p-2 rounded-xl border shadow-sm transition-all ${isGeneratingPDF ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+              className={`p-2 rounded-xl border shadow-sm transition-all ${isGeneratingPDF ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer'}`}
             >
               <FileDown size={20} className={isGeneratingPDF ? 'animate-bounce' : ''} />
             </button>
-            <button onClick={isSpeaking ? () => window.speechSynthesis.cancel() : handleSpeak} className={`p-2 rounded-xl border shadow-sm transition-all ${isSpeaking ? 'bg-red-500 text-white border-red-400' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+            <button onClick={isSpeaking ? () => window.speechSynthesis.cancel() : handleSpeak} className={`p-2 rounded-xl border shadow-sm transition-all ${isSpeaking ? 'bg-red-500 text-white border-red-400 cursor-pointer' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer'}`}>
               {isSpeaking ? <StopCircle size={20} /> : <Volume2 size={20} />}
             </button>
           </div>
@@ -171,7 +171,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
       <div className="space-y-4">
         {sections.map((section, idx) => (
           <div key={idx} className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <button onClick={() => toggleSection(idx)} className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors">
+            <button onClick={() => toggleSection(idx)} className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors cursor-pointer">
               <div className="flex items-center space-x-4">
                 <div className="p-2.5 bg-slate-50 rounded-xl text-teal-600 border border-slate-100">
                   {section.icon}

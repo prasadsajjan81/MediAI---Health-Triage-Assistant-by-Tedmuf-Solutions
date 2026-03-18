@@ -21,7 +21,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ data, onChange }) => {
            <select
             value={data.language}
             onChange={(e) => onChange('language', e.target.value as Language)}
-            className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-white form-select"
+            className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-white form-select cursor-pointer"
           >
             {Object.values(Language).map((l) => (
               <option key={l} value={l}>{l}</option>
@@ -48,7 +48,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ data, onChange }) => {
           <select
             value={data.sex}
             onChange={(e) => onChange('sex', e.target.value as Gender)}
-            className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-white form-select"
+            className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-white form-select cursor-pointer"
           >
             {Object.values(Gender).map((g) => (
               <option key={g} value={g}>{g}</option>

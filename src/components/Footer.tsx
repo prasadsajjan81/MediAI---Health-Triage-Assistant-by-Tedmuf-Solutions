@@ -31,11 +31,11 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <Phone size={16} className="mr-3 text-teal-400" />
-                <a href="tel:7506549564" className="hover:text-white transition-colors">7506549564</a>
+                <a href="tel:7506549564" className="hover:text-white transition-colors cursor-pointer">7506549564</a>
               </div>
               <div className="flex items-center">
                 <Mail size={16} className="mr-3 text-teal-400" />
-                <a href="mailto:prasadsajjan81@gmail.com" className="hover:text-white transition-colors">prasadsajjan81@gmail.com</a>
+                <a href="mailto:prasadsajjan81@gmail.com" className="hover:text-white transition-colors cursor-pointer">prasadsajjan81@gmail.com</a>
               </div>
             </div>
           </div>
@@ -44,7 +44,7 @@ const Footer: React.FC = () => {
         <div className="pt-8 border-t border-slate-800 text-center text-xs">
           <p>© {new Date().getFullYear()} Vishwasini - MediAI. All rights reserved.</p>
           <p className="mt-2">
-            Site developed and maintained by - <a href="https://www.tedmuf.com" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:text-teal-300 transition-colors">www.tedmuf.com</a>
+            Site developed and maintained by - <a href="https://www.tedmuf.com" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:text-teal-300 transition-colors cursor-pointer">www.tedmuf.com</a>
           </p>
           <p className="mt-2 text-slate-400">
             Special thanks to JSV Sajjan and team

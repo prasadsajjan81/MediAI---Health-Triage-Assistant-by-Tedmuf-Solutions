@@ -177,7 +177,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
       <div className="bg-slate-50 w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 my-8">
         <div className="relative bg-white p-8 border-b border-slate-200">
-          <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors cursor-pointer">
             <X size={20} className="text-slate-600" />
           </button>
           <div className="text-center">
@@ -187,13 +187,13 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             <div className="mt-6 inline-flex p-1 bg-slate-100 rounded-xl">
               <button 
                 onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${billingCycle === 'monthly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${billingCycle === 'monthly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
               >
                 Monthly
               </button>
               <button 
                 onClick={() => setBillingCycle('yearly')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${billingCycle === 'yearly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${billingCycle === 'yearly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
               >
                 Yearly
               </button>
@@ -246,7 +246,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   }
                 }}
                 disabled={!!loading}
-                className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 ${
+                className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                   plan.id === SubscriptionPlan.Hospital 
                     ? 'bg-slate-900 text-white hover:bg-slate-800' 
                     : `bg-gradient-to-r ${plan.color} text-white hover:opacity-90 shadow-lg ${plan.shadow}`
