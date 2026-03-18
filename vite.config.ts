@@ -1,8 +1,12 @@
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
     // Load env file based on `mode` in the current working directory.
@@ -20,20 +24,29 @@ export default defineConfig(({ mode }) => {
     };
 
     const configPaths = [
+      path.resolve(__dirname, 'src/firebase-applet-config.json'),
+      path.resolve(__dirname, 'firebase-applet-config.json'),
       path.resolve(process.cwd(), 'src/firebase-applet-config.json'),
       path.resolve(process.cwd(), 'firebase-applet-config.json')
     ];
+
+    console.log('Vite Build: Checking config paths:', configPaths);
 
     for (const configPath of configPaths) {
       if (fs.existsSync(configPath)) {
         try {
           const fileConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
           firebaseConfig = { ...firebaseConfig, ...fileConfig };
+          console.log(`Vite Build: Loaded config from ${configPath}`);
           break;
         } catch (e) {
-          console.error(`Error parsing ${configPath}:`, e);
+          console.error(`Vite Build: Error parsing ${configPath}:`, e);
         }
       }
+    }
+
+    if (!firebaseConfig.apiKey && !env.VITE_FIREBASE_API_KEY && !env.FIREBASE_API_KEY) {
+      console.warn('Vite Build: No Firebase API Key found in environment or JSON config files.');
     }
 
     return {
@@ -48,14 +61,16 @@ export default defineConfig(({ mode }) => {
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-        // Explicitly inject Firebase variables with multiple fallback options
-        'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY || firebaseConfig.apiKey || ''),
-        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN || env.FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain || ''),
-        'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID || env.FIREBASE_PROJECT_ID || firebaseConfig.projectId || ''),
-        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET || env.FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket || ''),
-        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID || env.FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId || ''),
-        'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID || env.FIREBASE_APP_ID || firebaseConfig.appId || ''),
-        'import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID': JSON.stringify(env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || env.FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || ''),
+        // Inject the whole config object as a global
+        '__FIREBASE_CONFIG__': JSON.stringify({
+          apiKey: env.VITE_FIREBASE_API_KEY || env.FIREBASE_API_KEY || firebaseConfig.apiKey || '',
+          authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || env.FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain || '',
+          projectId: env.VITE_FIREBASE_PROJECT_ID || env.FIREBASE_PROJECT_ID || firebaseConfig.projectId || '',
+          storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || env.FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket || '',
+          messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || env.FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId || '',
+          appId: env.VITE_FIREBASE_APP_ID || env.FIREBASE_APP_ID || firebaseConfig.appId || '',
+          firestoreDatabaseId: env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || env.FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || '',
+        }),
         'import.meta.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(env.VITE_RAZORPAY_KEY_ID || env.RAZORPAY_KEY_ID || ''),
       },
       resolve: {

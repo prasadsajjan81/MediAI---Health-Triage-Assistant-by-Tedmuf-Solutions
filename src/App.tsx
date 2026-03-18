@@ -99,7 +99,7 @@ export default function App() {
           <div className="bg-slate-50 p-4 rounded-xl text-left text-xs font-mono text-slate-500 mb-6 break-all">
             {initError || 'Check the browser console for more details.'}
             <br />
-            Firebase Config Source: {!!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'JSON'}
+            Firebase Config Source: {typeof (window as any).__FIREBASE_CONFIG__ !== 'undefined' ? 'Injected' : (!!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'None')}
           </div>
           <button 
             onClick={() => window.location.reload()}

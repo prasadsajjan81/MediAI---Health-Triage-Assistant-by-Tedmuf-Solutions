@@ -3,7 +3,9 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 // Firebase configuration from environment variables (injected by Vite)
-const firebaseConfig = {
+declare const __FIREBASE_CONFIG__: any;
+
+const firebaseConfig = typeof __FIREBASE_CONFIG__ !== 'undefined' ? __FIREBASE_CONFIG__ : {
   apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || '').trim(),
   authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '').trim(),
   projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || '').trim(),
@@ -17,7 +19,7 @@ console.log("Firebase Config Status:", {
   hasApiKey: !!firebaseConfig.apiKey,
   projectId: firebaseConfig.projectId,
   databaseId: firebaseConfig.firestoreDatabaseId,
-  source: !!import.meta.env.VITE_FIREBASE_API_KEY ? 'Env' : 'JSON'
+  source: typeof __FIREBASE_CONFIG__ !== 'undefined' ? 'Injected' : 'Env'
 });
 
 // Initialize Firebase safely
