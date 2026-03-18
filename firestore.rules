@@ -46,11 +46,16 @@ service cloud.firestore {
          (request.auth.token.email == "prasadsajjan81@gmail.com" && request.auth.token.email_verified == true));
     }
 
+    function isProfessionalOrStudent() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['doctor', 'hospital', 'student', 'admin'];
+    }
+
     function isValidUser(data) {
       return data.keys().hasAll(['uid', 'email', 'role']) &&
              data.uid is string &&
              data.email is string &&
-             data.role in ['admin', 'user'];
+             data.role in ['admin', 'user', 'doctor', 'hospital', 'student'];
     }
 
     function isValidAnalysis(data) {
@@ -74,7 +79,7 @@ service cloud.firestore {
     }
 
     match /analyses/{analysisId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isProfessionalOrStudent());
       allow create: if isAuthenticated() && isValidAnalysis(request.resource.data);
       allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }

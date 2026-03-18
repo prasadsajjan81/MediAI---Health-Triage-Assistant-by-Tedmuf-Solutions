@@ -39,12 +39,12 @@
     },
     "Payment": {
       "title": "Payment Record",
-      "description": "Stores Razorpay payment details",
+      "description": "Stores Stripe payment details",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
         "paymentId": { "type": "string" },
-        "orderId": { "type": "string" },
+        "sessionId": { "type": "string" },
         "amount": { "type": "number" },
         "status": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }

@@ -7,11 +7,14 @@ interface DoctorDashboardProps {
   history: AnalysisRecord[];
   onSelectRecord: (record: AnalysisRecord) => void;
   onDownloadPdf: (record: AnalysisRecord) => void;
+  userRole?: string;
 }
 
-const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectRecord, onDownloadPdf }) => {
+const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectRecord, onDownloadPdf, userRole }) => {
   const [filterTriage, setFilterTriage] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState<string>('');
+
+  const isStudent = userRole === 'student';
 
   const filteredHistory = history.filter(record => {
     // Triage Filter
@@ -53,7 +56,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectReco
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-slate-800 flex items-center">
-           <Activity className="mr-2 text-teal-600" /> Doctor Dashboard
+           <Activity className="mr-2 text-teal-600" /> {isStudent ? 'Student Dashboard' : 'Doctor Dashboard'}
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
             {/* Filter */}

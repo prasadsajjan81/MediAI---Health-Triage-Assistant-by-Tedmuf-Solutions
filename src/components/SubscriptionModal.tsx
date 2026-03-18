@@ -21,8 +21,8 @@ const PLANS = [
     id: SubscriptionPlan.Student,
     name: 'Student Subscription',
     icon: GraduationCap,
-    price: 199,
-    yearlyPrice: 999,
+    price: 9,
+    yearlyPrice: 79,
     description: 'Best for medical students',
     features: [
       'Unlimited report analysis',
@@ -37,7 +37,8 @@ const PLANS = [
     id: SubscriptionPlan.Doctor,
     name: 'Doctor AI Assistant',
     icon: Stethoscope,
-    price: 999,
+    price: 29,
+    yearlyPrice: 249,
     description: 'For medical professionals',
     features: [
       'Report summarizer',
@@ -55,7 +56,7 @@ const PLANS = [
     price: 'Custom',
     description: 'Bulk analysis for hospitals',
     features: [
-      '₹20-₹50 per report API',
+      'Flexible API pricing',
       'Massive scale support',
       'Direct EHR integration',
       'Dedicated support'
@@ -83,28 +84,16 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       // Fallback: Fetch from server if frontend env is missing
       if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
         try {
-          console.log("Attempting to fetch Razorpay config from server...");
           const configRes = await fetch('/api/payments/config');
-          
-          if (!configRes.ok) {
-            const text = await configRes.text();
-            console.error(`Server returned ${configRes.status}: ${text.substring(0, 100)}`);
-            throw new Error(`Server error: ${configRes.status}`);
-          }
-
           const config = await configRes.json();
           razorpayKey = config.keyId;
-          console.log("Successfully fetched Razorpay config from server.");
         } catch (e) {
-          console.error("Failed to fetch Razorpay config from server", e);
+          console.error("Failed to fetch Razorpay config", e);
         }
       }
 
-      console.log("Razorpay Key Check:", razorpayKey ? `${razorpayKey.substring(0, 8)}...` : "MISSING");
-      
-      if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
-        console.error("Razorpay Key ID is missing in both frontend and backend.");
-        alert("Razorpay Key ID is missing. Please ensure RAZORPAY_KEY_ID is set in the AI Studio Settings and that you have restarted the application.");
+      if (!razorpayKey || razorpayKey === 'rzp_test_placeholder') {
+        alert("Razorpay Key ID is missing. Please set RAZORPAY_KEY_ID in Settings.");
         setLoading(null);
         return;
       }
@@ -113,7 +102,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       const response = await fetch('/api/payments/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, currency: "USD" }),
       });
 
       const order = await response.json();
@@ -162,7 +151,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             alert(`Payment Successful! Your ${planId} subscription is now active.`);
             onClose();
           } else {
-            alert("Payment verification failed. Please contact support.");
+            alert("Payment verification failed.");
           }
         },
         prefill: {
@@ -225,7 +214,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 <div className="flex items-baseline space-x-1">
                   <span className="text-3xl font-black text-slate-900">
                     {typeof plan.price === 'number' 
-                      ? `₹${billingCycle === 'yearly' && plan.yearlyPrice ? plan.yearlyPrice : plan.price}` 
+                      ? `$${billingCycle === 'yearly' && plan.yearlyPrice ? plan.yearlyPrice : plan.price}` 
                       : plan.price}
                   </span>
                   {typeof plan.price === 'number' && (
@@ -233,7 +222,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   )}
                 </div>
                 {billingCycle === 'yearly' && plan.yearlyPrice && typeof plan.price === 'number' && (
-                  <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">Save ₹{(plan.price as number) * 12 - plan.yearlyPrice}</span>
+                  <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">Save ${(plan.price as number) * 12 - plan.yearlyPrice}</span>
                 )}
               </div>
 
@@ -279,7 +268,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         <div className="p-6 bg-slate-100 flex items-center justify-center space-x-8 text-slate-400">
           <div className="flex items-center space-x-1">
             <ShieldCheck size={16} />
-            <span className="text-xs">Secure Razorpay Payment</span>
+            <span className="text-xs">Secure Stripe Payment</span>
           </div>
           <div className="flex items-center space-x-1">
             <Sparkles size={16} />

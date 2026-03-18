@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 // PDF Generation Utility with Multilingual Support
 import { AnalysisRecord } from '../types';
 
@@ -69,17 +69,15 @@ export const generatePDF = async (record: AnalysisRecord) => {
     document.body.appendChild(container);
 
     // Wait for any images or fonts to load
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const canvas = await html2canvas(container, {
-      scale: 2, // Higher quality
-      useCORS: true,
-      logging: false,
+    const imgData = await toPng(container, {
+      quality: 0.95,
+      pixelRatio: 2,
       backgroundColor: 'white',
-      windowWidth: 800
+      width: 800
     });
 
-    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'pt',

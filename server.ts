@@ -26,12 +26,6 @@ async function startServer() {
     const key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
     
-    console.log("Razorpay Init Check:", {
-      hasId: !!key_id,
-      idPrefix: key_id ? key_id.substring(0, 8) : 'none',
-      hasSecret: !!key_secret
-    });
-
     if (!key_id || !key_secret || key_id === 'rzp_test_placeholder') {
       return null;
     }
@@ -55,7 +49,6 @@ async function startServer() {
 
   app.get("/api/payments/config", (req, res) => {
     const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY || "rzp_test_placeholder";
-    console.log("Serving Payment Config. Key ID found:", keyId !== "rzp_test_placeholder");
     res.json({ keyId });
   });
 
@@ -66,7 +59,7 @@ async function startServer() {
         return res.status(500).json({ error: "Razorpay API keys are not configured." });
       }
 
-      const { amount, currency = "INR" } = req.body;
+      const { amount, currency = "USD" } = req.body;
       const options = {
         amount: Math.round(Number(amount) * 100),
         currency,

@@ -12,10 +12,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { amount, currency = "INR" } = req.body;
+    const { amount, currency = "USD" } = req.body;
     
     const options = {
-      amount: amount * 100, // amount in the smallest currency unit (paise)
+      amount: Math.round(amount * 100), // amount in the smallest currency unit
       currency,
       receipt: `receipt_${Date.now()}`,
     };

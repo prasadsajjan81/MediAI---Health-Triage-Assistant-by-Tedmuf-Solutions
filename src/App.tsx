@@ -8,9 +8,9 @@ import AnalysisResult from './components/AnalysisResult';
 import DoctorDashboard from './components/DoctorDashboard';
 import AuthModal from './components/AuthModal';
 import SubscriptionModal from './components/SubscriptionModal';
-import { PatientData, Gender, FileData, AnalysisState, Language, AudioData, AnalysisRecord } from './types';
+import { PatientData, Gender, FileData, AnalysisState, Language, AudioData, AnalysisRecord, SubscriptionPlan } from './types';
 import { analyzeHealthData } from './services/geminiService';
-import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown, RefreshCcw, GraduationCap } from 'lucide-react';
 import { generatePDF } from './utils/pdfGenerator';
 import { useAuth } from './AuthContext';
 import { db, isFirebaseConfigValid, handleFirestoreError, OperationType } from './firebase';
@@ -127,6 +127,11 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
 
+  const isStudent = profile?.role === 'student' || (profile?.subscriptionPlan === SubscriptionPlan.Student && profile?.subscriptionStatus === 'active');
+  const isDoctor = profile?.role === 'doctor' || (profile?.subscriptionPlan === SubscriptionPlan.Doctor && profile?.subscriptionStatus === 'active');
+  const isHospital = profile?.role === 'hospital' || (profile?.subscriptionPlan === SubscriptionPlan.Hospital && profile?.subscriptionStatus === 'active');
+  const canAccessProfessionalPanel = isAdmin || isDoctor || isHospital || isStudent;
+
   // Load history from Firestore
   useEffect(() => {
     if (!user) {
@@ -135,7 +140,7 @@ export default function App() {
     }
 
     let q;
-    if ((isAdmin || profile?.role === 'doctor' || profile?.role === 'hospital') && activeTab === 'doctor') {
+    if (canAccessProfessionalPanel && activeTab === 'doctor') {
       q = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(100));
     } else {
       q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
@@ -300,20 +305,23 @@ export default function App() {
               >
                 <User size={16} className="mr-2" /> Patient View
               </button>
-              <button 
-                onClick={() => {
-                  if (!user) {
-                    setIsAuthModalOpen(true);
-                  } else if (!isAdmin && profile?.role !== 'doctor' && profile?.role !== 'hospital') {
-                    alert("Access Denied: Only medical professionals or administrators can access the Doctor Panel.");
-                  } else {
-                    setActiveTab('doctor');
-                  }
-                }}
-                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                <Stethoscope size={16} className="mr-2" /> Doctor Panel
-              </button>
+              
+              {(isAdmin || isDoctor || isHospital || isStudent) && (
+                <button 
+                  onClick={() => setActiveTab('doctor')}
+                  className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'doctor' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  {isStudent ? (
+                    <>
+                      <GraduationCap size={16} className="mr-2" /> Student Panel
+                    </>
+                  ) : (
+                    <>
+                      <Stethoscope size={16} className="mr-2" /> Doctor Panel
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -442,8 +450,8 @@ export default function App() {
             </>
           )}
 
-          {/* --- DOCTOR TAB --- */}
-          {activeTab === 'doctor' && isAdmin && (
+          {/* --- DOCTOR/STUDENT TAB --- */}
+          {activeTab === 'doctor' && canAccessProfessionalPanel && (
             <div className="animate-in fade-in duration-500">
               {selectedRecord ? (
                 <AnalysisResult 
@@ -467,6 +475,7 @@ export default function App() {
                   history={history}
                   onSelectRecord={handleDoctorViewRecord}
                   onDownloadPdf={(record) => generatePDF(record)}
+                  userRole={isStudent ? 'student' : profile?.role}
                 />
               )}
             </div>

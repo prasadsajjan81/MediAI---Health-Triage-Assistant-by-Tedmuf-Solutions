@@ -2,25 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
-// Firebase configuration
-// We use hardcoded values as a reliable fallback to prevent build errors
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDXvUrUY9miWxgBPgoQwNVtNV2hxmujL3U",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "gen-lang-client-0155473314.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "gen-lang-client-0155473314",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "gen-lang-client-0155473314.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "158441786926",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:158441786926:web:d78f3e91b554141a9019bf",
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "ai-studio-e41431e6-1472-4ab8-b1e3-3f455ba21046"
-};
+// Import the Firebase configuration
+import firebaseConfig from './firebase-applet-config.json';
 
 // Initialize Firebase safely
 let app: any;
 let auth: any;
 let db: any;
 
-// Configuration is now always valid due to fallbacks
-export const isFirebaseConfigValid = true;
+export const isFirebaseConfigValid = !!firebaseConfig.apiKey;
 
 try {
   app = initializeApp(firebaseConfig);

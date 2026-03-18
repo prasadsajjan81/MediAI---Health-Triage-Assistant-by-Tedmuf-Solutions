@@ -65,9 +65,9 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
                 <div className={`hidden md:flex items-center px-3 py-1 rounded-full border text-xs font-bold ${
                   profile?.role === 'admin' 
                     ? 'bg-slate-900 text-white border-slate-900' 
-                    : profile?.role === 'student'
+                    : planLabel === 'STUDENT'
                     ? 'bg-blue-50 text-blue-700 border-blue-200'
-                    : profile?.role === 'doctor' || profile?.role === 'hospital'
+                    : planLabel === 'DOCTOR' || planLabel === 'HOSPITAL'
                     ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
