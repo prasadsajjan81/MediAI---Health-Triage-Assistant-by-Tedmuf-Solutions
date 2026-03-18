@@ -17,6 +17,7 @@ const firebaseConfig = typeof __FIREBASE_CONFIG__ !== 'undefined' ? __FIREBASE_C
 
 console.log("Firebase Config Status:", {
   hasApiKey: !!firebaseConfig.apiKey,
+  apiKeyPrefix: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 5)}...` : 'None',
   projectId: firebaseConfig.projectId,
   databaseId: firebaseConfig.firestoreDatabaseId,
   source: typeof __FIREBASE_CONFIG__ !== 'undefined' ? 'Injected' : 'Env'
