@@ -3,6 +3,7 @@ import { X, Check, CreditCard, Sparkles, ShieldCheck, Zap, GraduationCap, Stetho
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../AuthContext';
+import { useGlobal } from '../context/GlobalContext';
 import { SubscriptionPlan } from '../types';
 
 declare global {
@@ -16,13 +17,13 @@ interface SubscriptionModalProps {
   onClose: () => void;
 }
 
-const PLANS = [
+const BASE_PLANS = [
   {
     id: SubscriptionPlan.Student,
     name: 'Student Subscription',
     icon: GraduationCap,
-    price: 199,
-    yearlyPrice: 1599,
+    priceINR: 199,
+    yearlyPriceINR: 1599,
     description: 'Best for medical students',
     features: [
       'Up to 50 reports/month',
@@ -37,8 +38,8 @@ const PLANS = [
     id: SubscriptionPlan.Doctor,
     name: 'Doctor AI Assistant',
     icon: Stethoscope,
-    price: 499,
-    yearlyPrice: 4999,
+    priceINR: 499,
+    yearlyPriceINR: 4999,
     description: 'For medical professionals',
     features: [
       'Up to 200 reports/month',
@@ -53,8 +54,8 @@ const PLANS = [
     id: SubscriptionPlan.Hospital,
     name: 'Hospital Integration',
     icon: Building2,
-    price: 1999,
-    yearlyPrice: 19999,
+    priceINR: 1999,
+    yearlyPriceINR: 19999,
     description: 'Bulk analysis for hospitals',
     features: [
       'Unlimited reports',
@@ -69,10 +70,25 @@ const PLANS = [
 
 export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
   const { profile } = useAuth();
+  const { currency, currencySymbol, country } = useGlobal();
   const [loading, setLoading] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   if (!isOpen) return null;
+
+  // Simple conversion logic for demo purposes
+  // In production, these would be fixed prices defined in the backend per region
+  const getPrice = (inr: number) => {
+    if (currency === 'INR') return inr;
+    if (currency === 'USD') return Math.round(inr / 80);
+    if (currency === 'EUR') return Math.round(inr / 90);
+    if (currency === 'GBP') return Math.round(inr / 100);
+    if (currency === 'AED') return Math.round(inr / 22);
+    if (currency === 'CAD') return Math.round(inr / 60);
+    if (currency === 'AUD') return Math.round(inr / 55);
+    if (currency === 'SGD') return Math.round(inr / 60);
+    return Math.round(inr / 80); // Default to USD-like conversion
+  };
 
   const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
     if (!profile) return;
@@ -206,7 +222,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         <div className="max-h-[85vh] overflow-y-auto">
           <div className="relative bg-white p-8 border-b border-slate-200">
             <div className="text-center pt-4">
-              <h2 className="text-3xl font-display font-bold text-slate-900 mb-2">Choose Your Plan</h2>
+              <h2 className="text-3xl font-sans font-bold text-slate-900 mb-2">Choose Your Plan</h2>
               <p className="text-slate-500">Select the best model for your needs and start your journey with MediAI</p>
               
               <div className="mt-6 inline-flex p-1 bg-slate-100 rounded-xl">
@@ -227,68 +243,70 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
           </div>
 
           <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANS.map((plan) => (
-              <div key={plan.id} className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col h-full hover:border-teal-500 transition-all hover:shadow-xl group">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${plan.color} flex items-center justify-center text-white mb-6 shadow-lg ${plan.shadow}`}>
-                  <plan.icon size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-1">{plan.name}</h3>
-                <p className="text-sm text-slate-500 mb-4">{plan.description}</p>
-                
-                <div className="mb-6">
-                  <div className="flex items-baseline space-x-1">
-                    <span className="text-3xl font-black text-slate-900">
-                      {typeof plan.price === 'number' 
-                        ? `₹${billingCycle === 'yearly' && plan.yearlyPrice ? plan.yearlyPrice : plan.price}` 
-                        : plan.price}
-                    </span>
-                    {typeof plan.price === 'number' && (
-                      <span className="text-slate-400 text-sm">/{billingCycle === 'yearly' && plan.yearlyPrice ? 'year' : 'month'}</span>
+            {BASE_PLANS.map((plan) => {
+              const currentPrice = billingCycle === 'yearly' ? plan.yearlyPriceINR : plan.priceINR;
+              const localizedPrice = getPrice(currentPrice);
+              const savings = billingCycle === 'yearly' ? getPrice(plan.priceINR * 12 - plan.yearlyPriceINR) : 0;
+
+              return (
+                <div key={plan.id} className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col h-full hover:border-teal-500 transition-all hover:shadow-xl group">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${plan.color} flex items-center justify-center text-white mb-6 shadow-lg ${plan.shadow}`}>
+                    <plan.icon size={24} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-1">{plan.name}</h3>
+                  <p className="text-sm text-slate-500 mb-4">{plan.description}</p>
+                  
+                  <div className="mb-6">
+                    <div className="flex items-baseline space-x-1">
+                      <span className="text-3xl font-black text-slate-900">
+                        {currencySymbol}{localizedPrice}
+                      </span>
+                      <span className="text-slate-400 text-sm">/{billingCycle === 'yearly' ? 'year' : 'month'}</span>
+                    </div>
+                    {billingCycle === 'yearly' && savings > 0 && (
+                      <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">Save {currencySymbol}{savings}</span>
                     )}
                   </div>
-                  {billingCycle === 'yearly' && plan.yearlyPrice && typeof plan.price === 'number' && (
-                    <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">Save ₹{(plan.price as number) * 12 - plan.yearlyPrice}</span>
-                  )}
-                </div>
 
-                <div className="space-y-3 mb-8 flex-grow">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-start space-x-3">
-                      <div className="mt-1 p-0.5 bg-teal-100 rounded-full">
-                        <Check size={10} className="text-teal-600" />
+                  <div className="space-y-3 mb-8 flex-grow">
+                    {plan.features.map((feature, i) => (
+                      <div key={i} className="flex items-start space-x-3">
+                        <div className="mt-1 p-0.5 bg-teal-100 rounded-full">
+                          <Check size={10} className="text-teal-600" />
+                        </div>
+                        <span className="text-sm text-slate-600">{feature}</span>
                       </div>
-                      <span className="text-sm text-slate-600">{feature}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <button
-                  onClick={() => {
-                    if (plan.id === SubscriptionPlan.Hospital) {
-                      const message = encodeURIComponent("Hello, I'm interested in the Hospital Integration for MediAI.");
-                      window.open(`https://wa.me/917506549564?text=${message}`, '_blank');
-                    } else {
-                      handlePayment(plan.id, billingCycle === 'yearly' && plan.yearlyPrice ? plan.yearlyPrice : plan.price as number);
-                    }
-                  }}
-                  disabled={!!loading}
-                  className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                    plan.id === SubscriptionPlan.Hospital 
-                      ? 'bg-slate-900 text-white hover:bg-slate-800' 
-                      : `bg-gradient-to-r ${plan.color} text-white hover:opacity-90 shadow-lg ${plan.shadow}`
-                  }`}
-                >
-                  {loading === plan.id ? (
-                    <span>Processing...</span>
-                  ) : (
-                    <>
-                      <CreditCard size={18} />
-                      <span>{plan.id === SubscriptionPlan.Hospital ? 'Contact Sales' : 'Get Started'}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            ))}
+                  <button
+                    onClick={() => {
+                      if (plan.id === SubscriptionPlan.Hospital) {
+                        const message = encodeURIComponent(`Hello, I'm interested in the Hospital Integration for MediAI from ${country.name}.`);
+                        window.open(`https://wa.me/917506549564?text=${message}`, '_blank');
+                      } else {
+                        handlePayment(plan.id, localizedPrice);
+                      }
+                    }}
+                    disabled={!!loading}
+                    className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                      plan.id === SubscriptionPlan.Hospital 
+                        ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                        : `bg-gradient-to-r ${plan.color} text-white hover:opacity-90 shadow-lg ${plan.shadow}`
+                    }`}
+                  >
+                    {loading === plan.id ? (
+                      <span>Processing...</span>
+                    ) : (
+                      <>
+                        <CreditCard size={18} />
+                        <span>{plan.id === SubscriptionPlan.Hospital ? 'Contact Sales' : 'Get Started'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <div className="p-6 bg-slate-100 flex items-center justify-center space-x-8 text-slate-400">

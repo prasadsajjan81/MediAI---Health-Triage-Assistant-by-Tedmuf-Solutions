@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PatientData, Gender, Language } from '../types';
+import { useGlobal } from '../context/GlobalContext';
 
 interface PatientFormProps {
   data: PatientData;
@@ -7,9 +8,22 @@ interface PatientFormProps {
 }
 
 const PatientForm: React.FC<PatientFormProps> = ({ data, onChange }) => {
+  const { country } = useGlobal();
+
+  const filteredLanguages = useMemo(() => {
+    // Show local languages first, then others
+    const localLangs = country.languages;
+    const allLangs = Object.values(Language);
+    
+    return [
+      ...allLangs.filter(l => localLangs.includes(l)),
+      ...allLangs.filter(l => !localLangs.includes(l))
+    ];
+  }, [country]);
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-      <h2 className="text-lg font-display font-bold text-slate-800 flex items-center">
+      <h2 className="text-lg font-sans font-bold text-slate-800 flex items-center">
         <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
         Patient Details
       </h2>
@@ -23,11 +37,15 @@ const PatientForm: React.FC<PatientFormProps> = ({ data, onChange }) => {
             onChange={(e) => onChange('language', e.target.value as Language)}
             className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-white form-select cursor-pointer"
           >
-            {Object.values(Language).map((l) => (
+            {filteredLanguages.map((l) => (
               <option key={l} value={l}>{l}</option>
             ))}
           </select>
-          <p className="text-xs text-slate-500 mt-1">The analysis will be generated in this language.</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {country.languages.includes(data.language) 
+              ? `Optimized for ${country.name}` 
+              : `Analysis will be in ${data.language}`}
+          </p>
         </div>
 
         {/* Age */}

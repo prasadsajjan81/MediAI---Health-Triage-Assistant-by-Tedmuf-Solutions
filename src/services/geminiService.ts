@@ -43,7 +43,8 @@ export const analyzeHealthData = async (
   symptomFiles: FileData[],
   reportFile: FileData | null,
   audioData: AudioData | null,
-  userRole: string = 'user'
+  userRole: string = 'user',
+  countryContext: { name: string; emergencyNumber: string } = { name: 'India', emergencyNumber: '102' }
 ): Promise<string> => {
   try {
     const apiKey = process.env.API_KEY;
@@ -81,6 +82,8 @@ export const analyzeHealthData = async (
     - preferredLanguage: ${patientData.language}
     - Include Ayurveda: ${patientData.includeAyurveda ? "YES" : "NO"}
     - User Role: ${userRole}
+    - User Location: ${countryContext.name}
+    - Local Emergency Number: ${countryContext.emergencyNumber}
 
     ${roleInstruction}
 
@@ -99,6 +102,7 @@ export const analyzeHealthData = async (
     - If Audio is present, transcribe and analyze it for symptom details.
     - Provide a structured markdown response as per system instructions.
     - Ensure the Output is in ${patientData.language}.
+    - **CRITICAL:** If an emergency is detected, explicitly mention the local emergency number (${countryContext.emergencyNumber}) for ${countryContext.name}.
     `;
 
     // Build parts array

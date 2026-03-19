@@ -53,7 +53,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-      <h2 className="text-lg font-display font-bold text-slate-800 flex items-center">
+      <h2 className="text-lg font-sans font-bold text-slate-800 flex items-center">
         <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
         Attachments
       </h2>
@@ -102,7 +102,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             
             {/* Placeholder to show empty state clearly if no images */}
             {symptomFiles.length === 0 && (
-               <div className="flex flex-col justify-center h-28 px-4 text-slate-400 text-xs italic">
+               <div className="flex flex-col justify-center h-28 px-4 text-slate-400 text-xs">
                  No images selected
                </div>
             )}

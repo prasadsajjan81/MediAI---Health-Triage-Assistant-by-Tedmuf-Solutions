@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './AuthContext';
+import { GlobalProvider } from './context/GlobalContext';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -12,8 +13,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AuthProvider>
+    <GlobalProvider>
+      <AuthProvider>
       <App />
     </AuthProvider>
+    </GlobalProvider>
   </React.StrictMode>
 );

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, User, Crown, Shield, Activity } from 'lucide-react';
+import { LogIn, LogOut, User, Crown, Shield, Activity, Globe, ChevronDown } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { useGlobal } from '../context/GlobalContext';
+import { COUNTRIES } from '../constants/countries';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import Logo from './Logo';
@@ -14,7 +16,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
   const { user, profile, isAdmin } = useAuth();
+  const { country, setCountry } = useGlobal();
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isCountryMenuOpen, setIsCountryMenuOpen] = useState(false);
 
   const getPlanLabel = () => {
     if (!profile) return null;
@@ -54,18 +58,66 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
             <Logo size={24} />
           </div>
           <div>
-            <h1 className="flex flex-col sm:flex-row sm:items-baseline sm:space-x-2 leading-none group">
-              <span className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight group-hover:text-teal-700 transition-colors duration-500">Vishwasini</span>
-              <span className="text-xl sm:text-2xl font-outfit font-black bg-gradient-to-br from-teal-600 via-emerald-500 to-teal-700 bg-clip-text text-transparent tracking-tighter uppercase drop-shadow-sm">MediAI</span>
+            <h1 className="flex flex-row items-baseline space-x-1.5 leading-none group cursor-default">
+              <span className="text-2xl sm:text-3xl font-display font-bold text-[#0f172a] tracking-tight group-hover:text-emerald-900 transition-all duration-300">
+                Vishwasini
+              </span>
+              <span className="text-xl sm:text-2xl font-brand font-black text-[#059669] tracking-tighter uppercase group-hover:text-emerald-500 transition-all duration-300">
+                MediAI
+              </span>
             </h1>
-            <p className="text-[9px] sm:text-[10px] text-slate-400 font-outfit font-bold uppercase tracking-[0.3em] mt-1.5 flex items-center">
-              <span className="w-8 h-[1px] bg-gradient-to-r from-teal-200 to-transparent mr-2 hidden sm:block"></span>
-              Your Trusted AI Health Companion
-            </p>
+            <div className="flex items-center mt-1.5 group">
+              <div className="h-[1px] w-8 bg-emerald-200 mr-2 group-hover:w-12 transition-all duration-500"></div>
+              <p className="text-[7px] sm:text-[9px] text-slate-400 font-brand font-bold uppercase tracking-[0.35em] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                Your Trusted AI Health Companion
+              </p>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Country Switcher */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsCountryMenuOpen(!isCountryMenuOpen)}
+              className="flex items-center space-x-2 px-3 py-2 bg-white border border-slate-200 rounded-xl hover:border-emerald-400 hover:bg-emerald-50/30 transition-all cursor-pointer shadow-sm group h-10"
+            >
+              <div className="flex items-center justify-center h-full">
+                <span className="text-base leading-none">{country.flag}</span>
+              </div>
+              <div className="flex items-center h-full">
+                <span className="text-[11px] font-brand font-black text-slate-600 group-hover:text-emerald-700 transition-colors leading-none pt-[3px]">{country.currency}</span>
+              </div>
+              <div className="flex items-center h-full">
+                <ChevronDown size={14} className={`text-slate-300 transition-transform ${isCountryMenuOpen ? 'rotate-180' : ''} group-hover:text-emerald-400`} />
+              </div>
+            </button>
+
+            {isCountryMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[60] py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select Region</p>
+                </div>
+                {COUNTRIES.map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={() => {
+                      setCountry(c);
+                      setIsCountryMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-teal-50 transition-colors cursor-pointer ${country.code === c.code ? 'bg-teal-50 text-teal-700 font-bold' : 'text-slate-700'}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span>{c.flag}</span>
+                      <span>{c.name}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">{c.currency}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {user ? (
             <div className="flex items-center space-x-3">
               {usageDisplay && (

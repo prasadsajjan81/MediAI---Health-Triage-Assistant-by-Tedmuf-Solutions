@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
               <div className="bg-teal-600 p-1.5 rounded-lg text-white">
                 <Logo size={20} />
               </div>
-              <h3 className="text-white font-display font-bold text-xl tracking-tight">Vishwasini <span className="text-teal-400">MediAI</span></h3>
+              <h3 className="text-white font-display font-bold text-2xl tracking-tight">Vishwasini <span className="text-emerald-400 font-brand font-black uppercase tracking-tighter">MediAI</span></h3>
             </div>
             <p className="text-sm leading-relaxed">
               Empowering individuals with AI-driven health triage and holistic wellness insights. 
@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
           <p className="mt-2 text-slate-400">
             Special thanks to JSV Sajjan and team
           </p>
-          <p className="mt-4 text-slate-500 italic">
+          <p className="mt-4 text-slate-500">
             Disclaimer: This application is for informational purposes only and does not provide medical diagnosis or treatment.
           </p>
         </div>

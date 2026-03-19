@@ -200,7 +200,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ audioData, setAudioData }
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 transition-all hover:shadow-md">
-      <h2 className="text-lg font-display font-bold text-slate-800 mb-4 flex items-center">
+      <h2 className="text-lg font-sans font-bold text-slate-800 mb-4 flex items-center">
         <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
         Voice Symptoms (Optional)
       </h2>

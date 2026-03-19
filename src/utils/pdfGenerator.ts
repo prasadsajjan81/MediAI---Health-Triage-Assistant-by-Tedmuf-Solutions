@@ -137,9 +137,9 @@ const formatMarkdownForHTML = (markdown: string): string => {
       const processInline = (text: string) => {
         return text
           .replace(/\*\*\s*(.*?)\s*\*\*/g, '<strong>$1</strong>')
-          .replace(/\*\s*(.*?)\s*\*/g, '<em>$1</em>')
+          .replace(/\*\s*(.*?)\s*\*/g, '<span>$1</span>')
           .replace(/__(.*?)__/g, '<strong>$1</strong>')
-          .replace(/_(.*?)_/g, '<em>$1</em>');
+          .replace(/_(.*?)_/g, '<span>$1</span>');
       };
 
       // Headers
@@ -160,7 +160,7 @@ const formatMarkdownForHTML = (markdown: string): string => {
 
       // Blockquotes (Disclaimers)
       if (line.startsWith('>')) {
-        return `<div style="border-left: 4px solid #cbd5e1; padding-left: 15px; color: #64748b; font-style: italic; margin: 15px 0; background-color: #f8fafc; padding-top: 10px; padding-bottom: 10px;">${processInline(line.substring(1).trim())}</div>`;
+        return `<div style="border-left: 4px solid #cbd5e1; padding-left: 15px; color: #64748b; margin: 15px 0; background-color: #f8fafc; padding-top: 10px; padding-bottom: 10px;">${processInline(line.substring(1).trim())}</div>`;
       }
 
       return `<p style="margin: 8px 0;">${processInline(line)}</p>`;

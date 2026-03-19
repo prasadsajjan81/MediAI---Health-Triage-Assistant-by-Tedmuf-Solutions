@@ -13,6 +13,7 @@ import { analyzeHealthData } from './services/geminiService';
 import { AlertTriangle, Leaf, Loader2, Sparkles, User, Stethoscope, Lock, Crown, RefreshCcw, GraduationCap } from 'lucide-react';
 import { generatePDF } from './utils/pdfGenerator';
 import { useAuth } from './AuthContext';
+import { useGlobal } from './context/GlobalContext';
 import { db, isFirebaseConfigValid, handleFirestoreError, OperationType, initError } from './firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, limit } from 'firebase/firestore';
 
@@ -84,6 +85,7 @@ import { config } from './config';
 // Main Application Component
 export default function App() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
+  const { country } = useGlobal();
   
   // Show configuration error if Firebase is not set up correctly
   if ((!isFirebaseConfigValid || initError) && !authLoading) {
@@ -301,7 +303,14 @@ export default function App() {
     setAnalysis({ loading: true, result: null, error: null });
 
     try {
-      const result = await analyzeHealthData(patientData, symptomFiles, reportFile, audioData, profile?.role || 'user');
+      const result = await analyzeHealthData(
+        patientData, 
+        symptomFiles, 
+        reportFile, 
+        audioData, 
+        profile?.role || 'user',
+        { name: country.name, emergencyNumber: country.emergencyNumber }
+      );
       setAnalysis({ loading: false, result, error: null });
       
       await saveAnalysisRecord(result);
@@ -421,7 +430,7 @@ export default function App() {
                 <AudioRecorder audioData={audioData} setAudioData={setAudioData} />
                 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <h2 className="text-lg font-display font-bold text-slate-800 mb-4 flex items-center">
+                  <h2 className="text-lg font-sans font-bold text-slate-800 mb-4 flex items-center">
                     <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
                     Describe Symptoms (Text)
                   </h2>
@@ -480,7 +489,7 @@ export default function App() {
                         <span className="font-outfit tracking-tight">
                           {user ? (
                             <>
-                              Analyze with <span className="font-display font-bold">Vishwasini</span>
+                              Analyze with <span className="font-display font-bold tracking-tight">Vishwasini</span> <span className="font-brand font-black uppercase tracking-tighter opacity-80">MediAI</span>
                             </>
                           ) : 'Sign In to Analyze'}
                         </span>

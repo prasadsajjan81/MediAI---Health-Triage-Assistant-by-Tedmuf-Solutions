@@ -62,7 +62,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-teal-50">
-          <h2 className="text-xl font-display font-bold text-teal-900 flex items-center">
+          <h2 className="text-xl font-sans font-bold text-teal-900 flex items-center">
             {isLogin ? <LogIn className="mr-2 text-teal-600" size={20} /> : <UserPlus className="mr-2 text-teal-600" size={20} />}
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
