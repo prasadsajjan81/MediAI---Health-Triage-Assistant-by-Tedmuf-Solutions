@@ -17,7 +17,13 @@ export enum Language {
   Bengali = 'Bengali',
   Gujarati = 'Gujarati',
   Malayalam = 'Malayalam',
-  Odia = 'Odia'
+  Odia = 'Odia',
+  Spanish = 'Spanish',
+  Arabic = 'Arabic',
+  French = 'French',
+  German = 'German',
+  Mandarin = 'Mandarin',
+  Malay = 'Malay'
 }
 
 export interface PatientData {

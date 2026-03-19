@@ -489,7 +489,7 @@ export default function App() {
                         <span className="font-outfit tracking-tight">
                           {user ? (
                             <>
-                              Analyze with <span className="font-display font-bold tracking-tight">Vishwasini</span> <span className="font-brand font-black uppercase tracking-tighter opacity-80">MediAI</span>
+                              Analyze with <span className="font-display font-bold tracking-tight">Vishwasini</span> <span className="font-brand font-bold uppercase tracking-tighter opacity-80">MediAI</span>
                             </>
                           ) : 'Sign In to Analyze'}
                         </span>

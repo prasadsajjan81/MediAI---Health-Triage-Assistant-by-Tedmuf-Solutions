@@ -11,14 +11,14 @@ const PatientForm: React.FC<PatientFormProps> = ({ data, onChange }) => {
   const { country } = useGlobal();
 
   const filteredLanguages = useMemo(() => {
-    // Show local languages first, then others
+    // Show Auto first, then local languages, then others
     const localLangs = country.languages;
-    const allLangs = Object.values(Language);
+    const allLangs = Object.values(Language).filter(l => l !== Language.Auto);
     
-    return [
-      ...allLangs.filter(l => localLangs.includes(l)),
-      ...allLangs.filter(l => !localLangs.includes(l))
-    ];
+    const prioritized = allLangs.filter(l => localLangs.includes(l));
+    const others = allLangs.filter(l => !localLangs.includes(l));
+    
+    return [Language.Auto, ...prioritized, ...others];
   }, [country]);
 
   return (

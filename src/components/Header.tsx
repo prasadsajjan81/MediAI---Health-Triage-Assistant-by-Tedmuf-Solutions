@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
               <span className="text-2xl sm:text-3xl font-display font-bold text-[#0f172a] tracking-tight group-hover:text-emerald-900 transition-all duration-300">
                 Vishwasini
               </span>
-              <span className="text-xl sm:text-2xl font-brand font-black text-[#059669] tracking-tighter uppercase group-hover:text-emerald-500 transition-all duration-300">
+              <span className="text-xl sm:text-2xl font-brand font-bold text-[#059669] tracking-tighter uppercase group-hover:text-emerald-500 transition-all duration-300">
                 MediAI
               </span>
             </h1>
