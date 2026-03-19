@@ -7,16 +7,16 @@ export const generatePDF = async (record: AnalysisRecord) => {
   try {
     // Create a temporary container for the report
     const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.left = '-9999px'; // Move far off-screen instead of visibility: hidden
+    container.style.position = 'absolute';
     container.style.top = '0';
+    container.style.left = '0';
     container.style.width = '800px';
-    container.style.padding = '40px';
     container.style.backgroundColor = 'white';
     container.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
     container.style.color = '#1e293b';
-    container.style.zIndex = '9999';
-    container.style.visibility = 'visible'; // Must be visible for some capture engines
+    container.style.zIndex = '-9999';
+    container.style.pointerEvents = 'none';
+    container.style.visibility = 'visible';
     container.className = 'pdf-report-container';
 
     // Build the HTML content
@@ -24,62 +24,67 @@ export const generatePDF = async (record: AnalysisRecord) => {
                        (record.triageLevel?.toLowerCase().includes('soon') ? '#ea580c' : '#16a34a');
 
     container.innerHTML = `
-      <div style="border-bottom: 2px solid #0d9488; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-        <div>
-          <h1 style="margin: 0; color: #0d9488; font-size: 28px; font-weight: 800;">Vishwasini - MediAI</h1>
-          <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Health Triage & AI Assessment Report</p>
+      <div style="padding: 40px; background-color: white;">
+        <div style="border-bottom: 2px solid #0d9488; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h1 style="margin: 0; color: #0d9488; font-size: 28px; font-weight: 800;">Vishwasini - MediAI</h1>
+            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Health Triage & AI Assessment Report</p>
+          </div>
+          <div style="text-align: right; color: #94a3b8; font-size: 12px;">
+            Generated: ${new Date(record.createdAt).toLocaleString()}
+          </div>
         </div>
-        <div style="text-align: right; color: #94a3b8; font-size: 12px;">
-          Generated: ${new Date(record.createdAt).toLocaleString()}
+
+        <div style="background-color: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+          <p style="margin: 0; color: #991b1b; font-size: 12px; line-height: 1.5; font-weight: 600;">
+            ⚠️ MEDICAL DISCLAIMER: Vishwasini - MediAI is an AI assistant, not a doctor. This report is for informational purposes only and is not a medical diagnosis or treatment plan. Always consult a professional.
+          </p>
         </div>
-      </div>
 
-      <div style="background-color: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 12px; margin-bottom: 25px;">
-        <p style="margin: 0; color: #991b1b; font-size: 12px; line-height: 1.5; font-weight: 600;">
-          ⚠️ MEDICAL DISCLAIMER: Vishwasini - MediAI is an AI assistant, not a doctor. This report is for informational purposes only and is not a medical diagnosis or treatment plan. Always consult a professional.
-        </p>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background-color: #f8fafc; padding: 20px; border-radius: 16px;">
-        <div>
-          <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Patient Basics</h3>
-          <p style="margin: 5px 0; font-size: 14px;"><strong>Age/Sex:</strong> ${record.patientAge || 'N/A'} / ${record.patientSex || 'N/A'}</p>
-          <p style="margin: 5px 0; font-size: 14px;"><strong>Duration:</strong> ${record.duration || 'N/A'}</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background-color: #f8fafc; padding: 20px; border-radius: 16px;">
+          <div>
+            <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Patient Basics</h3>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Age/Sex:</strong> ${record.patientAge || 'N/A'} / ${record.patientSex || 'N/A'}</p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Duration:</strong> ${record.duration || 'N/A'}</p>
+          </div>
+          <div>
+            <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Medical Context</h3>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Conditions:</strong> ${record.conditions || 'None'}</p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Medications:</strong> ${record.medications || 'None'}</p>
+          </div>
         </div>
-        <div>
-          <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Medical Context</h3>
-          <p style="margin: 5px 0; font-size: 14px;"><strong>Conditions:</strong> ${record.conditions || 'None'}</p>
-          <p style="margin: 5px 0; font-size: 14px;"><strong>Medications:</strong> ${record.medications || 'None'}</p>
+
+        <div style="margin-bottom: 30px; padding: 20px; border-radius: 16px; border: 2px solid ${triageColor}; background-color: ${triageColor}10;">
+          <h2 style="margin: 0; color: ${triageColor}; font-size: 22px; font-weight: 800; text-transform: uppercase;">
+            Triage Level: ${record.triageLevel || 'Unknown'}
+          </h2>
         </div>
-      </div>
 
-      <div style="margin-bottom: 30px; padding: 20px; border-radius: 16px; border: 2px solid ${triageColor}; background-color: ${triageColor}10;">
-        <h2 style="margin: 0; color: ${triageColor}; font-size: 22px; font-weight: 800; text-transform: uppercase;">
-          Triage Level: ${record.triageLevel || 'Unknown'}
-        </h2>
-      </div>
+        <div class="markdown-content" style="font-size: 15px; line-height: 1.6; color: #334155;">
+          ${formatMarkdownForHTML(record.markdown)}
+        </div>
 
-      <div class="markdown-content" style="font-size: 15px; line-height: 1.6; color: #334155;">
-        ${formatMarkdownForHTML(record.markdown)}
-      </div>
-
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px;">
-        This report was generated by Vishwasini - MediAI. ID: ${record.id}
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px;">
+          This report was generated by Vishwasini - MediAI. ID: ${record.id}
+        </div>
       </div>
     `;
 
     document.body.appendChild(container);
 
-    // Wait for any images or fonts to load
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for any images or fonts to load and rendering to complete
+    await document.fonts.ready;
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const imgData = await toPng(container, {
-      quality: 0.9,
-      pixelRatio: 1.5,
+      quality: 1.0,
+      pixelRatio: 2,
       backgroundColor: 'white',
-      width: 800,
       cacheBust: true,
-      skipFonts: false
+      style: {
+        visibility: 'visible',
+        opacity: '1'
+      }
     });
 
     const pdf = new jsPDF({
@@ -91,16 +96,18 @@ export const generatePDF = async (record: AnalysisRecord) => {
     const imgProps = pdf.getImageProperties(imgData);
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
     // Handle multi-page
     let heightLeft = pdfHeight;
     let position = 0;
-    const pageHeight = pdf.internal.pageSize.getHeight();
 
+    // Add first page
     pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
     heightLeft -= pageHeight;
 
-    while (heightLeft >= 0) {
+    // Add subsequent pages if needed
+    while (heightLeft > 0) {
       position = heightLeft - pdfHeight;
       pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
@@ -126,31 +133,37 @@ const formatMarkdownForHTML = (markdown: string): string => {
       line = line.trim();
       if (!line) return '<br/>';
       
+      // Inline formatting (Bold, Italic)
+      const processInline = (text: string) => {
+        return text
+          .replace(/\*\*\s*(.*?)\s*\*\*/g, '<strong>$1</strong>')
+          .replace(/\*\s*(.*?)\s*\*/g, '<em>$1</em>')
+          .replace(/__(.*?)__/g, '<strong>$1</strong>')
+          .replace(/_(.*?)_/g, '<em>$1</em>');
+      };
+
       // Headers
-      if (line.startsWith('###')) return `<h3 style="color: #0f172a; margin-top: 20px; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">${line.replace(/^###\s*/, '')}</h3>`;
-      if (line.startsWith('##')) return `<h2 style="color: #0f172a; margin-top: 25px; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">${line.replace(/^##\s*/, '')}</h2>`;
-      if (line.startsWith('#')) return `<h1 style="color: #0d9488; margin-top: 30px; margin-bottom: 20px; font-size: 24px;">${line.replace(/^#\s*/, '')}</h1>`;
-      
-      // Bold
-      line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      if (line.startsWith('###')) return `<h3 style="color: #0f172a; margin-top: 20px; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; font-weight: 700;">${processInline(line.replace(/^###\s*/, ''))}</h3>`;
+      if (line.startsWith('##')) return `<h2 style="color: #0f172a; margin-top: 25px; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; font-weight: 800;">${processInline(line.replace(/^##\s*/, ''))}</h2>`;
+      if (line.startsWith('#')) return `<h1 style="color: #0d9488; margin-top: 30px; margin-bottom: 20px; font-size: 24px; font-weight: 900;">${processInline(line.replace(/^#\s*/, ''))}</h1>`;
       
       // Bullets
       if (line.startsWith('- ') || line.startsWith('* ')) {
-        return `<div style="margin-left: 20px; margin-bottom: 5px; display: flex;"><span style="margin-right: 10px; color: #0d9488;">•</span><span>${line.substring(2)}</span></div>`;
+        return `<div style="margin-left: 20px; margin-bottom: 5px; display: flex;"><span style="margin-right: 10px; color: #0d9488; font-weight: bold;">•</span><span>${processInline(line.substring(2))}</span></div>`;
       }
       
       // Numbered lists
       if (line.match(/^\d+\.\s/)) {
         const num = line.match(/^\d+/)?.[0];
-        return `<div style="margin-left: 20px; margin-bottom: 5px; display: flex;"><span style="margin-right: 10px; color: #0d9488; font-weight: bold;">${num}.</span><span>${line.replace(/^\d+\.\s/, '')}</span></div>`;
+        return `<div style="margin-left: 20px; margin-bottom: 5px; display: flex;"><span style="margin-right: 10px; color: #0d9488; font-weight: bold;">${num}.</span><span>${processInline(line.replace(/^\d+\.\s/, ''))}</span></div>`;
       }
 
       // Blockquotes (Disclaimers)
       if (line.startsWith('>')) {
-        return `<div style="border-left: 4px solid #cbd5e1; padding-left: 15px; color: #64748b; font-style: italic; margin: 15px 0;">${line.substring(1).trim()}</div>`;
+        return `<div style="border-left: 4px solid #cbd5e1; padding-left: 15px; color: #64748b; font-style: italic; margin: 15px 0; background-color: #f8fafc; padding-top: 10px; padding-bottom: 10px;">${processInline(line.substring(1).trim())}</div>`;
       }
 
-      return `<p style="margin: 8px 0;">${line}</p>`;
+      return `<p style="margin: 8px 0;">${processInline(line)}</p>`;
     })
     .join('');
 };
