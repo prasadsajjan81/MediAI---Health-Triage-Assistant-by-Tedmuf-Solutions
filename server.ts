@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs";
 import cors from "cors";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -21,103 +22,94 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  // Razorpay setup (Lazy initialization)
-  const getRazorpay = () => {
-    const key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY;
-    const key_secret = process.env.RAZORPAY_KEY_SECRET;
-    
-    if (!key_id || !key_secret || key_id === 'rzp_test_placeholder') {
-      return null;
-    }
-    
-    try {
-      const RZP = (Razorpay as any).default || Razorpay;
-      return new RZP({
-        key_id,
-        key_secret,
-      });
-    } catch (err) {
-      console.error("Error initializing Razorpay:", err);
-      return null;
-    }
-  };
+  // Razorpay setup
+  const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+    key_secret: process.env.RAZORPAY_KEY_SECRET || "your_key_secret",
+  });
+  console.log("Razorpay SDK initialized.");
 
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", uptime: process.uptime() });
+    res.json({ status: "ok", uptime: process.uptime(), env: process.env.NODE_ENV });
   });
 
   app.get("/api/payments/config", (req, res) => {
-    const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY || "rzp_test_placeholder";
-    res.json({ keyId });
+    res.json({ keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_your_key_id" });
   });
 
   app.post("/api/payments/order", async (req, res) => {
     try {
-      const rzp = getRazorpay();
-      if (!rzp) {
-        return res.status(500).json({ error: "Razorpay API keys are not configured." });
-      }
-
-      const { amount, currency = "USD" } = req.body;
+      const { amount, currency = "INR" } = req.body;
+      
       const options = {
-        amount: Math.round(Number(amount) * 100),
+        amount: Math.round(Number(amount) * 100), // amount in the smallest currency unit (paise)
         currency,
         receipt: `receipt_${Date.now()}`,
       };
 
-      const order = await rzp.orders.create(options);
+      const order = await razorpay.orders.create(options);
+      console.log("Razorpay order created:", order.id);
       res.json(order);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Razorpay order error:", error);
-      res.status(500).json({ error: "Failed to create order" });
+      res.status(500).json({ error: "Failed to create order", details: error.message });
     }
   });
 
   app.post("/api/payments/verify", async (req, res) => {
     try {
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-      const secret = process.env.RAZORPAY_KEY_SECRET;
-
-      if (!secret) {
-        return res.status(500).json({ error: "Server configuration error" });
-      }
-
+      
       const sign = razorpay_order_id + "|" + razorpay_payment_id;
       const expectedSign = crypto
-        .createHmac("sha256", secret)
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "your_key_secret")
         .update(sign.toString())
         .digest("hex");
 
       if (razorpay_signature === expectedSign) {
-        res.json({ status: "success" });
+        res.json({ status: "success", message: "Payment verified successfully" });
       } else {
-        res.status(400).json({ status: "failure" });
+        res.status(400).json({ status: "failure", message: "Invalid signature" });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment verification error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
   // Vite Integration
-  if (process.env.NODE_ENV !== "production") {
+  const isProd = process.env.NODE_ENV === "production";
+  console.log(`Environment: ${isProd ? 'Production' : 'Development'}`);
+
+  if (!isProd) {
     console.log("Initializing Vite Middleware...");
-    const vite = await createViteServer({
-      server: { 
-        middlewareMode: true,
-        hmr: false
-      },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-    console.log("Vite Middleware Ready.");
+    try {
+      const vite = await createViteServer({
+        server: { 
+          middlewareMode: true,
+          hmr: false,
+          host: '0.0.0.0',
+          port: 3000
+        },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("Vite Middleware Ready.");
+    } catch (viteErr) {
+      console.error("Failed to initialize Vite middleware:", viteErr);
+    }
   } else {
     const distPath = path.resolve(__dirname, "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    console.log(`Serving static files from: ${distPath}`);
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    } else {
+      console.error("Dist folder not found in production mode!");
+    }
   }
 
   app.listen(PORT, "0.0.0.0", () => {

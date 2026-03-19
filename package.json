@@ -11,8 +11,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.6",
     "@google/genai": "^1.31.0",
     "@tailwindcss/vite": "^4.2.1",
+    "cashfree-pg": "^5.1.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",

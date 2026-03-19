@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { X, Check, CreditCard, Sparkles, ShieldCheck, Zap, GraduationCap, Stethoscope, Building2 } from 'lucide-react';
-import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from '../AuthContext';
 import { SubscriptionPlan } from '../types';
-
-interface SubscriptionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 declare global {
   interface Window {
     Razorpay: any;
   }
+}
+
+interface SubscriptionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const PLANS = [
@@ -78,55 +78,52 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     setLoading(planId);
 
     try {
-      const env = (import.meta as any).env;
-      let razorpayKey = env.VITE_RAZORPAY_KEY_ID || env.VITE_RAZORPAY_KEY;
-      
-      // Fallback: Fetch from server if frontend env is missing
-      if (!razorpayKey || razorpayKey === '' || razorpayKey === 'rzp_test_placeholder') {
-        try {
-          const configRes = await fetch('/api/payments/config');
-          const config = await configRes.json();
-          razorpayKey = config.keyId;
-        } catch (e) {
-          console.error("Failed to fetch Razorpay config", e);
-        }
-      }
-
-      if (!razorpayKey || razorpayKey === 'rzp_test_placeholder') {
-        alert("Razorpay Key ID is missing. Please set RAZORPAY_KEY_ID in Settings.");
-        setLoading(null);
-        return;
-      }
-
       // 1. Create Order on Backend
       const response = await fetch('/api/payments/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency: "USD" }),
+        body: JSON.stringify({ 
+          amount, 
+          currency: "INR"
+        }),
       });
 
-      const order = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || "Failed to create order");
+      }
 
-      // 2. Open Razorpay Checkout
+      const order = await response.json();
+      console.log("Order created successfully:", order);
+
+      // 2. Get Razorpay Key
+      const configRes = await fetch('/api/payments/config');
+      const { keyId } = await configRes.json();
+
+      // 3. Open Razorpay Checkout
       const options = {
-        key: razorpayKey,
+        key: keyId,
         amount: order.amount,
         currency: order.currency,
-        name: "Vishwasini - MediAI",
-        description: `${planId} Plan`,
+        name: "MediAI",
+        description: `Subscription for ${planId}`,
         order_id: order.id,
-        handler: async (response: any) => {
-          // 3. Verify Payment on Backend
+        handler: async function (response: any) {
+          // 4. Verify Payment on Backend
           const verifyRes = await fetch('/api/payments/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(response),
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
           });
 
           const verifyData = await verifyRes.json();
 
           if (verifyData.status === 'success') {
-            // 4. Update Subscription and Role in Firestore
+            // 5. Update Subscription and Role in Firestore
             const userRef = doc(db, 'users', profile.uid);
             const endDate = new Date();
             if (billingCycle === 'yearly' && planId === SubscriptionPlan.Student) {
@@ -151,23 +148,26 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             alert(`Payment Successful! Your ${planId} subscription is now active.`);
             onClose();
           } else {
-            alert("Payment verification failed.");
+            alert(`Payment verification failed: ${verifyData.message || "Unknown error"}`);
           }
         },
         prefill: {
-          email: profile.email,
           name: profile.displayName,
+          email: profile.email,
         },
         theme: {
-          color: "#0d9488",
+          color: "#7c3aed",
         },
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        alert(`Payment failed: ${response.error.description}`);
+      });
       rzp.open();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment error:", error);
-      alert("Something went wrong with the payment process.");
+      alert(`Payment error: ${error.message || "Something went wrong with the payment process."}`);
     } finally {
       setLoading(null);
     }
@@ -268,7 +268,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         <div className="p-6 bg-slate-100 flex items-center justify-center space-x-8 text-slate-400">
           <div className="flex items-center space-x-1">
             <ShieldCheck size={16} />
-            <span className="text-xs">Secure Stripe Payment</span>
+            <span className="text-xs">Secure Cashfree Payment</span>
           </div>
           <div className="flex items-center space-x-1">
             <Sparkles size={16} />

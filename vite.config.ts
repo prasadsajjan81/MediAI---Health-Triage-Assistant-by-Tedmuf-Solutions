@@ -60,6 +60,7 @@ export default defineConfig(({ mode }) => {
         'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(finalConfig.appId),
         'import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID': JSON.stringify(finalConfig.firestoreDatabaseId),
         'import.meta.env.VITE_RAZORPAY_KEY_ID': JSON.stringify(env.VITE_RAZORPAY_KEY_ID || env.RAZORPAY_KEY_ID || ''),
+        'import.meta.env.VITE_CASHFREE_ENV': JSON.stringify(env.VITE_CASHFREE_ENV || env.CASHFREE_ENV || 'SANDBOX'),
       },
       resolve: {
         alias: {
