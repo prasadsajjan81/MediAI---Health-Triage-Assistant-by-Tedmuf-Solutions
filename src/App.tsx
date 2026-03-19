@@ -224,12 +224,19 @@ export default function App() {
 
       await addDoc(collection(db, 'analyses'), newRecord);
 
-      // Update free tests remaining if applicable
-      if (profile && profile.subscriptionStatus === 'free') {
+      // Update free tests remaining or monthly report count
+      if (profile) {
         const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
-          freeTestsRemaining: Math.max(0, profile.freeTestsRemaining - 1)
-        });
+        if (profile.subscriptionStatus === 'free') {
+          await updateDoc(userRef, {
+            freeTestsRemaining: Math.max(0, profile.freeTestsRemaining - 1)
+          });
+        } else {
+          // Increment report count for paid users
+          await updateDoc(userRef, {
+            reportCount: (profile.reportCount || 0) + 1
+          });
+        }
       }
       
     } catch (e: any) {
@@ -238,6 +245,32 @@ export default function App() {
       }
       console.error("Error saving analysis record", e);
     }
+  };
+
+  const checkReportLimit = async (): Promise<boolean> => {
+    if (!profile || isAdmin) return true;
+
+    // Reset logic: if last reset was more than 30 days ago or in a different month
+    const now = new Date();
+    const lastReset = new Date(profile.lastReportReset || now.toISOString());
+    
+    if (now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) {
+      const userRef = doc(db, 'users', user!.uid);
+      await updateDoc(userRef, {
+        reportCount: 0,
+        lastReportReset: now.toISOString()
+      });
+      return true;
+    }
+
+    // Check limits
+    const limit = profile.role === 'student' ? 50 : profile.role === 'doctor' ? 200 : Infinity;
+    if (profile.reportCount >= limit) {
+      setAnalysis({ ...analysis, error: `Monthly report limit reached (${limit}). Please upgrade your plan for more.` });
+      return false;
+    }
+
+    return true;
   };
 
   const handleAnalyze = async () => {
@@ -249,6 +282,11 @@ export default function App() {
     if (profile?.subscriptionStatus === 'free' && profile.freeTestsRemaining <= 0 && !isAdmin) {
       setIsSubscriptionModalOpen(true);
       return;
+    }
+
+    if (profile?.subscriptionStatus === 'active') {
+      const canProceed = await checkReportLimit();
+      if (!canProceed) return;
     }
 
     if (!patientData.age) {
@@ -269,7 +307,16 @@ export default function App() {
       await saveAnalysisRecord(result);
 
       setTimeout(() => {
-        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+        const resultsSection = document.getElementById('results-section');
+        if (resultsSection) {
+          const headerOffset = 100;
+          const elementPosition = resultsSection.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
       }, 100);
     } catch (err: any) {
       setAnalysis({ 
@@ -374,7 +421,7 @@ export default function App() {
                 <AudioRecorder audioData={audioData} setAudioData={setAudioData} />
                 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                  <h2 className="text-lg font-display font-bold text-slate-800 mb-4 flex items-center">
                     <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
                     Describe Symptoms (Text)
                   </h2>
@@ -416,24 +463,30 @@ export default function App() {
                   </div>
                 )}
 
-                <button
-                  onClick={handleAnalyze}
-                  disabled={analysis.loading}
-                  className={`w-full max-w-md mx-auto py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0
-                    ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 cursor-pointer'}`}
-                >
-                  {analysis.loading ? (
-                    <>
-                      <Loader2 className="animate-spin" size={24} />
-                      <span>Analyzing inputs...</span>
-                    </>
-                  ) : (
-                    <>
-                      {!user ? <Lock size={20} className="mr-2 opacity-50" /> : <Sparkles size={24} />}
-                      <span>{user ? 'Analyze with Vishwasini - MediAI' : 'Sign In to Analyze'}</span>
-                    </>
-                  )}
-                </button>
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={analysis.loading}
+                    className={`w-full max-w-md mx-auto py-5 px-6 rounded-2xl font-bold text-xl text-white shadow-xl shadow-teal-500/20 flex items-center justify-center space-x-3 transition-all transform hover:-translate-y-1 active:translate-y-0 group
+                      ${analysis.loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-br from-teal-600 via-teal-500 to-emerald-600 hover:shadow-teal-500/40 cursor-pointer'}`}
+                  >
+                    {analysis.loading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={24} />
+                        <span>Analyzing inputs...</span>
+                      </>
+                    ) : (
+                      <>
+                        {!user ? <Lock size={20} className="mr-2 opacity-50" /> : <Sparkles size={24} className="group-hover:animate-pulse" />}
+                        <span className="font-outfit tracking-tight">
+                          {user ? (
+                            <>
+                              Analyze with <span className="font-display font-bold">Vishwasini</span>
+                            </>
+                          ) : 'Sign In to Analyze'}
+                        </span>
+                      </>
+                    )}
+                  </button>
               </div>
 
               {analysis.result && (
@@ -442,6 +495,10 @@ export default function App() {
                       markdown={analysis.result} 
                       language={patientData.language}
                       patientData={patientData}
+                      onReset={() => {
+                        setAnalysis({ loading: false, result: null, error: null });
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
                   />
                   
                   <button 

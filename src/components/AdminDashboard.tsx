@@ -82,7 +82,9 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
         ...newUser,
         subscriptionStatus: newUser.subscriptionPlan === SubscriptionPlan.Free ? 'free' : 'active',
         subscriptionEndDate: null,
-        freeTestsRemaining: 5
+        freeTestsRemaining: 5,
+        reportCount: 0,
+        lastReportReset: new Date().toISOString()
       });
       setIsAddingUser(false);
       setNewUser({ email: '', displayName: '', role: 'user', subscriptionPlan: SubscriptionPlan.Free });
@@ -149,6 +151,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                     <th className="pb-4 pl-2">User</th>
                     <th className="pb-4">Role</th>
                     <th className="pb-4">Plan</th>
+                    <th className="pb-4">Usage</th>
                     <th className="pb-4">Status</th>
                     <th className="pb-4 text-right pr-2">Actions</th>
                   </tr>
@@ -191,6 +194,11 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                           <option value={SubscriptionPlan.Doctor}>Doctor</option>
                           <option value={SubscriptionPlan.Hospital}>Hospital</option>
                         </select>
+                      </td>
+                      <td className="py-4">
+                        <span className="text-xs font-mono text-slate-500">
+                          {user.subscriptionStatus === 'free' ? `${user.freeTestsRemaining || 0} left` : (user.reportCount || 0)}
+                        </span>
                       </td>
                       <td className="py-4">
                         <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full ${

@@ -53,7 +53,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-      <h2 className="text-lg font-semibold text-slate-800 flex items-center">
+      <h2 className="text-lg font-display font-bold text-slate-800 flex items-center">
         <span className="w-1 h-6 bg-teal-500 rounded-full mr-3"></span>
         Attachments
       </h2>

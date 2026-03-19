@@ -80,5 +80,7 @@ export interface UserProfile {
   subscriptionPlan: SubscriptionPlan;
   subscriptionEndDate: string | null;
   freeTestsRemaining: number;
+  reportCount: number;
+  lastReportReset: string; // ISO string of the last reset date
   apiCredits?: number; // For Hospital Integration
 }

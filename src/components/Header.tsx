@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, User, Crown, Shield } from 'lucide-react';
+import { LogIn, LogOut, User, Crown, Shield, Activity } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -33,6 +33,17 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
     }
   };
 
+  const getUsageDisplay = () => {
+    if (!profile || isAdmin) return null;
+    if (profile.subscriptionStatus === 'free') {
+      return `${profile.freeTestsRemaining || 0} left`;
+    }
+    const limit = profile.role === 'student' ? 50 : profile.role === 'doctor' ? 200 : null;
+    if (limit === null) return "Unlimited";
+    return `${profile.reportCount || 0}/${limit}`;
+  };
+
+  const usageDisplay = getUsageDisplay();
   const planLabel = getPlanLabel();
 
   return (
@@ -43,14 +54,27 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
             <Logo size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-display font-bold text-slate-900 tracking-tight leading-none">Vishwasini <span className="text-teal-600">MediAI</span></h1>
-            <p className="text-[10px] sm:text-[11px] text-slate-500 font-outfit font-bold uppercase tracking-[0.2em] mt-1">Your Trusted AI Health Companion</p>
+            <h1 className="flex flex-col sm:flex-row sm:items-baseline sm:space-x-2 leading-none group">
+              <span className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight group-hover:text-teal-700 transition-colors duration-500">Vishwasini</span>
+              <span className="text-xl sm:text-2xl font-outfit font-black bg-gradient-to-br from-teal-600 via-emerald-500 to-teal-700 bg-clip-text text-transparent tracking-tighter uppercase drop-shadow-sm">MediAI</span>
+            </h1>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 font-outfit font-bold uppercase tracking-[0.3em] mt-1.5 flex items-center">
+              <span className="w-8 h-[1px] bg-gradient-to-r from-teal-200 to-transparent mr-2 hidden sm:block"></span>
+              Your Trusted AI Health Companion
+            </p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
           {user ? (
             <div className="flex items-center space-x-3">
+              {usageDisplay && (
+                <div className="hidden sm:flex items-center px-2 py-1 bg-slate-100 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200">
+                  <Activity size={12} className="mr-1 text-teal-500" />
+                  {usageDisplay}
+                </div>
+              )}
+              
               {isAdmin && (
                 <button 
                   onClick={() => setIsAdminOpen(true)}

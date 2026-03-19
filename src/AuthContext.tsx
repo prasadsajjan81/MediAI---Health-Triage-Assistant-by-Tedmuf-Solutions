@@ -60,13 +60,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               subscriptionPlan: SubscriptionPlan.Free,
               subscriptionEndDate: null,
               freeTestsRemaining: 1,
+              reportCount: 0,
+              lastReportReset: new Date().toISOString(),
             };
             await setDoc(userRef, newProfile);
           }
 
           unsubscribeProfile = onSnapshot(userRef, (doc) => {
             if (doc.exists()) {
-              setProfile(doc.data() as UserProfile);
+              const data = doc.data() as UserProfile;
+              console.log("AuthContext: Profile updated from Firestore:", data.uid, "Role:", data.role, "Plan:", data.subscriptionPlan);
+              setProfile(data);
             }
             setLoading(false);
           }, (error) => {

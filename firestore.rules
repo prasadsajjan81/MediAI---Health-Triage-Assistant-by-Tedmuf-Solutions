@@ -74,7 +74,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() && (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && 
                     (request.resource.data.role == 'user' || isAdmin());
       allow update: if isAuthenticated() && (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) &&
-                    (request.resource.data.role == resource.data.role || isAdmin());
+                    (isAdmin() || request.resource.data.role == resource.data.role || request.resource.data.role in ['student', 'doctor', 'hospital']);
       allow delete: if isAdmin();
     }
 
