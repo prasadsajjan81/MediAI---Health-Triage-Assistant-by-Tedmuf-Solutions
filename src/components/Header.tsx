@@ -56,16 +56,17 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <div className="bg-teal-600 p-1.5 sm:p-2 rounded-lg sm:rounded-xl text-white shadow-lg shadow-teal-600/20 flex-shrink-0">
-            <Logo size={20} />
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="bg-gradient-to-br from-teal-600 to-emerald-700 p-2 sm:p-2.5 rounded-2xl text-white shadow-xl shadow-teal-600/30 flex-shrink-0 relative overflow-hidden group/logo">
+            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/logo:translate-y-0 transition-transform duration-500"></div>
+            <Logo size={24} className="relative z-10" />
           </div>
           <div className="min-w-0">
-            <h1 className="flex flex-row items-baseline space-x-1 sm:space-x-1.5 leading-none group cursor-default">
-              <span className="text-lg sm:text-3xl font-display font-bold text-[#0f172a] tracking-tight group-hover:text-emerald-900 transition-all duration-300 truncate">
+            <h1 className="flex flex-col sm:flex-row sm:items-baseline sm:space-x-2 leading-none group cursor-default">
+              <span className="text-xl sm:text-3xl font-outfit font-bold text-slate-900 tracking-tight group-hover:text-teal-700 transition-all duration-300 truncate">
                 Vishwasini
               </span>
-              <span className="text-base sm:text-2xl font-brand font-bold text-[#059669] tracking-tighter uppercase group-hover:text-emerald-500 transition-all duration-300 flex-shrink-0">
+              <span className="text-sm sm:text-2xl font-outfit font-light text-emerald-600 tracking-[0.2em] uppercase group-hover:text-emerald-500 transition-all duration-300 flex-shrink-0">
                 MediAI
               </span>
             </h1>
@@ -87,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
             >
               <span className="text-xs sm:text-base leading-none">{country.flag}</span>
               <span className="hidden xs:inline text-[9px] sm:text-[11px] font-brand font-black text-slate-600 group-hover:text-emerald-700 transition-colors leading-none pt-[1px] sm:pt-[3px]">{country.currency}</span>
-              <ChevronDown size={10} className={`sm:w-[14px] sm:h-[14px] text-slate-300 transition-transform ${isCountryMenuOpen ? 'rotate-180' : ''} group-hover:text-emerald-400`} />
+              <ChevronDown size={14} className={`text-slate-500 transition-transform ${isCountryMenuOpen ? 'rotate-180' : ''} group-hover:text-emerald-600`} />
             </button>
 
             {isCountryMenuOpen && (

@@ -3,11 +3,13 @@ import React from 'react';
 interface LogoProps {
   size?: number;
   className?: string;
+  id?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 24, className = "" }) => {
+const Logo: React.FC<LogoProps> = ({ size = 24, className = "", id }) => {
   return (
     <svg 
+      id={id}
       width={size} 
       height={size} 
       viewBox="0 0 100 100" 
@@ -15,46 +17,56 @@ const Logo: React.FC<LogoProps> = ({ size = 24, className = "" }) => {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Elegant Shield Shape */}
-      <path 
-        d="M50 8L18 22V45C18 66 32 85 50 92C68 85 82 66 82 45V22L50 8Z" 
-        fill="url(#logo-gradient)" 
-        fillOpacity="0.15"
-      />
-      <path 
-        d="M50 8L18 22V45C18 66 32 85 50 92C68 85 82 66 82 45V22L50 8Z" 
-        stroke="currentColor" 
-        strokeWidth="3.5" 
-        strokeLinejoin="round"
-      />
+      {/* Background Geometric Element - The "Network" */}
+      <circle cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" opacity="0.2" />
       
-      {/* Refined Pulse / "V" Shape */}
+      {/* The "V" - Interlocking Geometric Planes */}
+      {/* Left Plane - Trust */}
       <path 
-        d="M30 52H38L44 38L52 62L58 48L62 52H70" 
-        stroke="currentColor" 
-        strokeWidth="4" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-      />
-      
-      {/* Sophisticated Sparkle */}
-      <path 
-        d="M72 32L74 26L76 32L82 34L76 36L74 42L72 36L66 34L72 32Z" 
-        fill="currentColor"
+        d="M25 30L50 85L50 55L25 30Z" 
+        fill="currentColor" 
+        fillOpacity="0.8"
       >
         <animate 
-          attributeName="opacity" 
-          values="1;0.3;1" 
-          dur="3s" 
+          attributeName="fill-opacity" 
+          values="0.8;0.6;0.8" 
+          dur="4s" 
           repeatCount="indefinite" 
         />
       </path>
+      
+      {/* Right Plane - Intelligence */}
+      <path 
+        d="M75 30L50 85L50 55L75 30Z" 
+        fill="currentColor" 
+        fillOpacity="0.4"
+      />
+      
+      {/* The "Check" - Verification / Trust (Vishwas) */}
+      <path 
+        d="M40 55L50 65L75 30" 
+        stroke="white" 
+        strokeWidth="6" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className="drop-shadow-sm"
+      />
+      
+      {/* Central Node - The AI Core */}
+      <circle cx="50" cy="55" r="4" fill="white">
+        <animate 
+          attributeName="r" 
+          values="3;5;3" 
+          dur="2s" 
+          repeatCount="indefinite" 
+        />
+      </circle>
 
       <defs>
-        <linearGradient id="logo-gradient" x1="18" y1="8" x2="82" y2="92" gradientUnits="userSpaceOnUse">
-          <stop stopColor="currentColor" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0.5" />
-        </linearGradient>
+        <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
       </defs>
     </svg>
   );
