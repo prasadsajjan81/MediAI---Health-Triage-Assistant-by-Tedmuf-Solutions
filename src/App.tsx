@@ -133,6 +133,8 @@ export default function App() {
   });
 
   const [history, setHistory] = useState<AnalysisRecord[]>([]);
+  const [dashboardLimit, setDashboardLimit] = useState(20);
+  const [hasMore, setHasMore] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<AnalysisRecord | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
@@ -151,9 +153,9 @@ export default function App() {
 
     let q;
     if (canAccessProfessionalPanel && activeTab === 'doctor') {
-      q = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(100));
+      q = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(dashboardLimit));
     } else {
-      q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+      q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(50));
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -162,6 +164,11 @@ export default function App() {
         id: doc.id
       })) as AnalysisRecord[];
       setHistory(records);
+      
+      // If we got fewer records than the limit, there are no more to load
+      if (canAccessProfessionalPanel && activeTab === 'doctor') {
+        setHasMore(records.length === dashboardLimit);
+      }
     }, (error) => {
       if (error.code === 'permission-denied') {
         handleFirestoreError(error, OperationType.LIST, 'analyses');
@@ -171,7 +178,11 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user, isAdmin, activeTab]);
+  }, [user, isAdmin, activeTab, dashboardLimit, canAccessProfessionalPanel]);
+
+  const loadMoreHistory = () => {
+    setDashboardLimit(prev => prev + 20);
+  };
 
   const handleDataChange = (field: keyof PatientData, value: any) => {
     setPatientData(prev => ({ ...prev, [field]: value }));
@@ -449,19 +460,19 @@ export default function App() {
                   setReportFile={setReportFile}
                 />
 
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors group"
+                <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors group"
                     onClick={() => handleDataChange('includeAyurveda', !patientData.includeAyurveda)}>
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl transition-colors ${patientData.includeAyurveda ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>
-                      <Leaf size={24} />
+                  <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
+                    <div className={`p-2.5 sm:p-3 rounded-xl transition-colors flex-shrink-0 ${patientData.includeAyurveda ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>
+                      <Leaf size={20} className="sm:w-[24px] sm:h-[24px]" />
                     </div>
-                    <div>
-                      <h3 className={`font-semibold text-lg ${patientData.includeAyurveda ? 'text-teal-900' : 'text-slate-700'}`}>Ayurvedic Interpretation</h3>
-                      <p className="text-sm text-slate-500">Get Dosha-based insights and holistic wellness tips</p>
+                    <div className="min-w-0">
+                      <h3 className={`font-semibold text-base sm:text-lg truncate ${patientData.includeAyurveda ? 'text-teal-900' : 'text-slate-700'}`}>Ayurvedic Interpretation</h3>
+                      <p className="text-[10px] sm:text-sm text-slate-500 truncate">Get Dosha-based insights and holistic wellness tips</p>
                     </div>
                   </div>
-                  <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${patientData.includeAyurveda ? 'bg-teal-500' : 'bg-slate-300'}`}>
-                    <div className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${patientData.includeAyurveda ? 'translate-x-6' : ''}`}></div>
+                  <div className={`w-12 h-7 sm:w-14 sm:h-8 rounded-full p-1 transition-colors duration-300 flex-shrink-0 ${patientData.includeAyurveda ? 'bg-teal-500' : 'bg-slate-300'}`}>
+                    <div className={`bg-white w-5 h-5 sm:w-6 sm:h-6 rounded-full shadow-md transform transition-transform duration-300 ${patientData.includeAyurveda ? 'translate-x-5 sm:translate-x-6' : ''}`}></div>
                   </div>
                 </div>
 
@@ -550,6 +561,8 @@ export default function App() {
                   onSelectRecord={handleDoctorViewRecord}
                   onDownloadPdf={(record) => generatePDF(record)}
                   userRole={isStudent ? 'student' : profile?.role}
+                  loadMore={loadMoreHistory}
+                  hasMore={hasMore}
                 />
               )}
             </div>

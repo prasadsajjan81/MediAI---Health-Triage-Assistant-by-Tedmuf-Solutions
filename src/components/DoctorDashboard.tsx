@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 // Doctor Dashboard Component
 import { AnalysisRecord } from '../types';
-import { Search, FileDown, Eye, Filter, Calendar, User, Clock, Activity } from 'lucide-react';
+import { Search, FileDown, Eye, Filter, Calendar, User, Clock, Activity, RefreshCcw } from 'lucide-react';
 
 interface DoctorDashboardProps {
   history: AnalysisRecord[];
   onSelectRecord: (record: AnalysisRecord) => void;
   onDownloadPdf: (record: AnalysisRecord) => void;
   userRole?: string;
+  loadMore?: () => void;
+  hasMore?: boolean;
 }
 
-const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectRecord, onDownloadPdf, userRole }) => {
+const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ 
+  history, 
+  onSelectRecord, 
+  onDownloadPdf, 
+  userRole,
+  loadMore,
+  hasMore
+}) => {
   const [filterTriage, setFilterTriage] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -170,6 +179,18 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ history, onSelectReco
             </div>
          )}
       </div>
+
+      {hasMore && loadMore && (
+        <div className="flex justify-center pt-4 pb-8">
+          <button 
+            onClick={loadMore}
+            className="px-8 py-3 bg-white border border-slate-200 text-teal-600 font-semibold rounded-xl hover:bg-teal-50 hover:border-teal-200 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            <RefreshCcw size={18} className="animate-in spin-in-180 duration-500" />
+            Load More Records
+          </button>
+        </div>
+      )}
     </div>
   );
 };
