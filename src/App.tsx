@@ -70,6 +70,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 const INITIAL_PATIENT_DATA: PatientData = {
+  patientName: '',
   age: '',
   sex: Gender.Male,
   language: Language.Auto,
@@ -225,6 +226,7 @@ export default function App() {
       const newRecord = {
         userId: user.uid,
         createdAt: new Date().toISOString(),
+        patientName: patientData.patientName,
         patientAge: patientData.age,
         patientSex: patientData.sex,
         duration: patientData.duration,
@@ -543,6 +545,7 @@ export default function App() {
                   markdown={selectedRecord.markdown}
                   language={Language.English}
                   patientData={{
+                    patientName: selectedRecord.patientName || '',
                     age: selectedRecord.patientAge || '',
                     sex: (selectedRecord.patientSex as Gender) || Gender.Other,
                     language: Language.Auto,

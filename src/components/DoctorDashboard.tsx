@@ -38,6 +38,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const match = 
+        (record.patientName || '').toLowerCase().includes(term) ||
         (record.conditions || '').toLowerCase().includes(term) ||
         (record.summaryQuick || '').toLowerCase().includes(term) ||
         (record.patientAge || '').includes(term);
@@ -135,8 +136,13 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
                                 <td className="px-6 py-4">
                                     <div className="font-medium text-slate-900 flex items-center gap-2">
                                         <User size={14} className="text-teal-600" />
-                                        {record.patientAge} yrs, {record.patientSex}
+                                        {record.patientName ? record.patientName : `${record.patientAge} yrs, ${record.patientSex}`}
                                     </div>
+                                    {record.patientName && (
+                                      <div className="text-xs text-slate-500 mt-0.5">
+                                          {record.patientAge} yrs, {record.patientSex}
+                                      </div>
+                                    )}
                                     <div className="text-xs text-slate-500 mt-0.5">
                                         Dur: {record.duration}
                                     </div>

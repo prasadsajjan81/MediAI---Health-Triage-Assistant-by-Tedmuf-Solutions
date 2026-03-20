@@ -117,6 +117,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
     const record: AnalysisRecord = {
       id: recordId || 'live',
       createdAt: new Date().toISOString(),
+      patientName: patientData?.patientName,
       patientAge: patientData?.age,
       patientSex: patientData?.sex?.toString(),
       duration: patientData?.duration,
@@ -167,7 +168,15 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
                 {triageLevel === 'emergency' ? 'Emergency' : triageLevel === 'urgent' ? 'Urgent Care' : 'Mild / Self-Care'}
               </h2>
-              <p className="text-sm text-slate-600 font-medium">AI-powered health assessment</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-slate-600 font-medium">AI-powered health assessment</p>
+                {patientData?.patientName && (
+                  <>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-sm font-bold text-teal-700">{patientData.patientName}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex space-x-2">

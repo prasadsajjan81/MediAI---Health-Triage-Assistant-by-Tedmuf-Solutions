@@ -27,6 +27,7 @@ export enum Language {
 }
 
 export interface PatientData {
+  patientName: string;
   age: string;
   sex: Gender;
   language: Language;
@@ -60,6 +61,7 @@ export interface AnalysisRecord {
   id: string;
   userId?: string;
   createdAt: string;
+  patientName?: string;
   patientAge?: string;
   patientSex?: string;
   duration?: string;

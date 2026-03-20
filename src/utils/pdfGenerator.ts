@@ -42,6 +42,12 @@ export const generatePDF = async (record: AnalysisRecord) => {
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background-color: #f8fafc; padding: 20px; border-radius: 16px;">
+          ${record.patientName ? `
+          <div style="grid-column: span 2; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 5px;">
+            <h3 style="margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Patient Name</h3>
+            <p style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">${record.patientName}</p>
+          </div>
+          ` : ''}
           <div>
             <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Patient Basics</h3>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Age/Sex:</strong> ${record.patientAge || 'N/A'} / ${record.patientSex || 'N/A'}</p>
