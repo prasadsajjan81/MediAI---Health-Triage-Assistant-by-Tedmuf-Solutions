@@ -279,8 +279,13 @@ export default function App() {
     }
 
     // Check limits
-    const limit = profile.role === 'student' ? 50 : profile.role === 'doctor' ? 200 : Infinity;
-    if (profile.reportCount >= limit) {
+    let limit = Infinity;
+    if (profile.subscriptionPlan === SubscriptionPlan.Patient) limit = 20;
+    else if (profile.subscriptionPlan === SubscriptionPlan.Student) limit = 50;
+    else if (profile.subscriptionPlan === SubscriptionPlan.Doctor) limit = 200;
+    else if (profile.subscriptionPlan === SubscriptionPlan.Free) limit = 0; // Handled separately
+
+    if (profile.reportCount >= limit && limit > 0) {
       setAnalysis({ ...analysis, error: `Monthly report limit reached (${limit}). Please upgrade your plan for more.` });
       return false;
     }

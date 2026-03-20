@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, CreditCard, Sparkles, ShieldCheck, Zap, GraduationCap, Stethoscope, Building2 } from 'lucide-react';
+import { X, Check, CreditCard, Sparkles, ShieldCheck, Zap, GraduationCap, Stethoscope, Building2, User } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../AuthContext';
@@ -18,6 +18,23 @@ interface SubscriptionModalProps {
 }
 
 const BASE_PLANS = [
+  {
+    id: SubscriptionPlan.Patient,
+    name: 'General Public / Patient',
+    icon: User,
+    priceINR: 99,
+    yearlyPriceINR: 999,
+    description: 'For personal & family use',
+    features: [
+      '20 triage sessions/month',
+      'Symptom history',
+      'Family profiles (up to 4)',
+      'Nearest hospital suggestions',
+      'No clinical tools'
+    ],
+    color: 'from-emerald-600 to-emerald-500',
+    shadow: 'shadow-emerald-600/30'
+  },
   {
     id: SubscriptionPlan.Student,
     name: 'Student Subscription',
@@ -143,7 +160,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             // 5. Update Subscription and Role in Firestore
             const userRef = doc(db, 'users', profile.uid);
             const endDate = new Date();
-            if (billingCycle === 'yearly' && planId === SubscriptionPlan.Student) {
+            if (billingCycle === 'yearly') {
               endDate.setFullYear(endDate.getFullYear() + 1);
             } else {
               endDate.setMonth(endDate.getMonth() + 1);
@@ -154,6 +171,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             if (planId === SubscriptionPlan.Student) newRole = 'student';
             else if (planId === SubscriptionPlan.Doctor) newRole = 'doctor';
             else if (planId === SubscriptionPlan.Hospital) newRole = 'hospital';
+            else if (planId === SubscriptionPlan.Patient) newRole = 'user';
 
             // If user is admin, keep admin role
             if (profile.role === 'admin') {
@@ -242,7 +260,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             </div>
           </div>
 
-          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {BASE_PLANS.map((plan) => {
               const currentPrice = billingCycle === 'yearly' ? plan.yearlyPriceINR : plan.priceINR;
               const localizedPrice = getPrice(currentPrice);

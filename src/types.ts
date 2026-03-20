@@ -74,6 +74,7 @@ export interface AnalysisRecord {
 
 export enum SubscriptionPlan {
   Free = 'free',
+  Patient = 'patient',
   Student = 'student',
   Doctor = 'doctor',
   Hospital = 'hospital'

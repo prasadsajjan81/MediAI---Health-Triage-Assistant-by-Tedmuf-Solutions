@@ -190,6 +190,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                           className="text-xs font-bold bg-slate-100 border-none rounded-lg px-2 py-1 focus:ring-2 focus:ring-teal-500/20 table-select cursor-pointer"
                         >
                           <option value={SubscriptionPlan.Free}>Free</option>
+                          <option value={SubscriptionPlan.Patient}>Patient</option>
                           <option value={SubscriptionPlan.Student}>Student</option>
                           <option value={SubscriptionPlan.Doctor}>Doctor</option>
                           <option value={SubscriptionPlan.Hospital}>Hospital</option>
@@ -274,6 +275,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                       className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 form-select cursor-pointer"
                     >
                       <option value={SubscriptionPlan.Free}>Free</option>
+                      <option value={SubscriptionPlan.Patient}>Patient</option>
                       <option value={SubscriptionPlan.Student}>Student</option>
                       <option value={SubscriptionPlan.Doctor}>Doctor</option>
                       <option value={SubscriptionPlan.Hospital}>Hospital</option>

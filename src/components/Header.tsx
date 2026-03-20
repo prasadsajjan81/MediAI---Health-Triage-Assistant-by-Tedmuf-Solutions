@@ -30,6 +30,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
     if (profile.subscriptionStatus !== 'active') return null;
     
     switch (profile.subscriptionPlan) {
+      case SubscriptionPlan.Patient: return 'PATIENT';
       case SubscriptionPlan.Student: return 'STUDENT';
       case SubscriptionPlan.Doctor: return 'DOCTOR';
       case SubscriptionPlan.Hospital: return 'HOSPITAL';
@@ -42,7 +43,9 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSubscription }) => {
     if (profile.subscriptionStatus === 'free') {
       return `${profile.freeTestsRemaining || 0} left`;
     }
-    const limit = profile.role === 'student' ? 50 : profile.role === 'doctor' ? 200 : null;
+    const limit = profile.subscriptionPlan === SubscriptionPlan.Patient ? 20 : 
+                  profile.role === 'student' ? 50 : 
+                  profile.role === 'doctor' ? 200 : null;
     if (limit === null) return "Unlimited";
     return `${profile.reportCount || 0}/${limit}`;
   };
