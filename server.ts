@@ -32,9 +32,29 @@ async function startServer() {
 
   // Cashfree setup
   const CFModule = await import("cashfree-pg");
-  const Cashfree = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
   
-  const cf = Cashfree as any;
+  // Robust discovery logic
+  let cf: any = null;
+  const candidates = [
+    (CFModule as any).Cashfree,
+    (CFModule as any).default?.Cashfree,
+    (CFModule as any).default,
+    CFModule
+  ];
+  
+  for (const cand of candidates) {
+    if (cand && typeof cand.PGCreateOrder === 'function') {
+      cf = cand;
+      break;
+    }
+  }
+
+  if (!cf) {
+    console.error("Cashfree SDK discovery failed. Module keys:", Object.keys(CFModule));
+    // Fallback to the most likely candidate even if check failed, to avoid crash
+    cf = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
+  }
+  
   cf.XClientId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
   cf.XClientSecret = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
   
@@ -42,6 +62,10 @@ async function startServer() {
     cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
       ? cf.Environment.PRODUCTION 
       : cf.Environment.SANDBOX;
+  } else if (cf.CFEnvironment) {
+    cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+      ? cf.CFEnvironment.PRODUCTION 
+      : cf.CFEnvironment.SANDBOX;
   } else {
     cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
   }
@@ -79,7 +103,7 @@ async function startServer() {
         }
       };
 
-      const response = await (Cashfree as any).PGCreateOrder("2023-08-01", request);
+      const response = await cf.PGCreateOrder("2023-08-01", request);
       console.log("Cashfree order created:", response.data.order_id);
       res.json(response.data);
     } catch (error: any) {

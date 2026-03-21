@@ -8,16 +8,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const CFModule = await import("cashfree-pg");
-    const Cashfree = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
     
-    // Some versions might nest it one level deeper
-    const cf = (Cashfree && typeof (Cashfree as any).PGCreateOrder === 'function') ? (Cashfree as any) : (Cashfree as any)?.Cashfree;
+    // Robust discovery logic
+    let cf: any = null;
+    const candidates = [
+      (CFModule as any).Cashfree,
+      (CFModule as any).default?.Cashfree,
+      (CFModule as any).default,
+      CFModule
+    ];
     
+    for (const cand of candidates) {
+      if (cand && typeof cand.PGCreateOrder === 'function') {
+        cf = cand;
+        break;
+      }
+    }
+
     if (!cf || typeof cf.PGCreateOrder !== 'function') {
-      return res.status(500).json({ 
-        error: "Cashfree SDK failed to load: Could not find valid Cashfree object with PGCreateOrder",
-        moduleKeys: Object.keys(CFModule)
-      });
+      // One more try: check if it's nested inside the named Cashfree export
+      if ((CFModule as any).Cashfree && (CFModule as any).Cashfree.Cashfree) {
+        cf = (CFModule as any).Cashfree.Cashfree;
+      }
+      
+      if (!cf || typeof cf.PGCreateOrder !== 'function') {
+        return res.status(500).json({ 
+          error: "Cashfree SDK failed to load: Could not find valid Cashfree object with PGCreateOrder",
+          moduleKeys: Object.keys(CFModule),
+          defaultKeys: (CFModule as any).default ? Object.keys((CFModule as any).default) : null
+        });
+      }
     }
 
     const appId = process.env.CASHFREE_APP_ID;
@@ -34,6 +54,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
         ? cf.Environment.PRODUCTION 
         : cf.Environment.SANDBOX;
+    } else if (cf.CFEnvironment) {
+      cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+        ? cf.CFEnvironment.PRODUCTION 
+        : cf.CFEnvironment.SANDBOX;
     } else {
       cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
     }
