@@ -69,82 +69,64 @@ async function startServer() {
 
   // Cashfree Test Route (for preview debugging)
   app.get("/api/cashfree/test", async (req, res) => {
+    const appId = process.env.CASHFREE_APP_ID;
+    const secretKey = process.env.CASHFREE_SECRET_KEY;
+    const envVar = process.env.CASHFREE_ENV || 'PRODUCTION';
+
+    if (!appId || !secretKey || appId === 'your_cashfree_app_id_here') {
+      return res.status(500).json({
+        error: 'Cashfree credentials not configured',
+        fix: 'Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in your environment variables.'
+      });
+    }
+
+    const configuredAsProduction = envVar === 'PRODUCTION';
+
     try {
-      const appId = (process.env.CASHFREE_APP_ID || "").trim();
-      const secretKey = (process.env.CASHFREE_SECRET_KEY || "").trim();
-      
-      const CFModule = await import("cashfree-pg");
-      const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
-      const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
-      const Configuration = CFModule.Configuration || (CFModule as any).default?.Configuration;
-      
-      if (!Cashfree) {
-        return res.status(500).json({ error: "Cashfree SDK not found" });
-      }
+      const { Cashfree, CFEnvironment } = await import('cashfree-pg');
 
-      // Determine environment
-      const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-      const env = isProduction 
-        ? (CFEnvironment?.PRODUCTION || "PRODUCTION")
-        : (CFEnvironment?.SANDBOX || "SANDBOX");
+      // v5 SDK: set static properties THEN instantiate
+      Cashfree.XClientId = appId;
+      Cashfree.XClientSecret = secretKey;
+      Cashfree.XEnvironment = configuredAsProduction
+        ? CFEnvironment.PRODUCTION
+        : CFEnvironment.SANDBOX;
 
-      console.log(`Testing Cashfree with AppID: ${appId.substring(0, 8)}... Env: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
+      const cashfree = new Cashfree();
 
-      let cashfreeInstance;
-      
-      if (Configuration) {
-        // Preferred v5 way: use Configuration object
-        const config = new (Configuration as any)({
-          xClientId: appId,
-          xClientSecret: secretKey,
-          xEnvironment: env
-        });
-        cashfreeInstance = new (Cashfree as any)(config);
-        console.log("Initialized using Configuration object");
-      } else {
-        // Fallback: set static properties
-        (Cashfree as any).XClientId = appId;
-        (Cashfree as any).XClientSecret = secretKey;
-        (Cashfree as any).XEnvironment = env;
-        cashfreeInstance = new (Cashfree as any)();
-        console.log("Initialized using static properties");
-      }
-
-      const request = {
+      const response = await cashfree.PGCreateOrder('2023-08-01', {
         order_amount: 1.00,
-        order_currency: "INR",
+        order_currency: 'INR',
         customer_details: {
-          customer_id: "test_user_verification",
-          customer_phone: "9999999999",
-          customer_email: "test@example.com",
-          customer_name: "Verification Test"
+          customer_id: 'test_verification',
+          customer_phone: '9999999999',
+          customer_email: 'test@example.com',
+          customer_name: 'Verification Test',
         },
         order_meta: {
-          return_url: `${req.headers.origin || 'https://vishwasini.com'}/payment-status?order_id={order_id}`
-        }
-      };
-
-      const response = await cashfreeInstance.PGCreateOrder(request);
-      res.json({ 
-        status: "SUCCESS", 
-        order_id: response.data?.order_id,
-        message: "v5 SDK call successful",
-        debug: {
-          appIdPrefix: appId.substring(0, 4),
-          envUsed: isProduction ? 'PRODUCTION' : 'SANDBOX',
-          initMethod: Configuration ? "Configuration" : "Static"
-        }
+          return_url: `${req.headers.origin || 'https://vishwasini.com'}/payment-status?order_id={order_id}`,
+        },
       });
+
+      return res.status(200).json({
+        status: 'SUCCESS',
+        message: 'Cashfree is working correctly',
+        order_id: response.data?.order_id,
+        environment: envVar,
+      });
+
     } catch (error: any) {
-      console.error("Cashfree Test Error:", error.response?.data || error.message);
-      res.status(500).json({ 
-        error: error.message, 
-        details: error.response?.data,
-        debug: {
-          appIdPrefix: (process.env.CASHFREE_APP_ID || "").trim().substring(0, 4),
-          envUsed: process.env.CASHFREE_ENV,
-          errorType: error.response?.data?.type || "unknown"
-        }
+      const cfError = error.response?.data;
+      let fix = null;
+      if (cfError?.type === 'authentication_error') {
+        fix = `Authentication failed. Your keys and CASHFREE_ENV must match the SAME mode. Current CASHFREE_ENV="${envVar}". Go to your Cashfree dashboard, ensure you are in ${configuredAsProduction ? 'Production' : 'Sandbox'} mode, and copy the correct App ID + Secret Key from there.`;
+      }
+      return res.status(500).json({
+        status: 'ERROR',
+        error: error.message,
+        cashfree_error: cfError,
+        fix,
+        debug: { appIdPrefix: appId.substring(0, 6), envUsed: envVar }
       });
     }
   });
@@ -152,60 +134,66 @@ async function startServer() {
   // Cashfree Order Creation
   app.post("/api/cashfree/order", async (req, res) => {
     try {
-      const { amount, customerId, customerPhone, customerEmail, customerName } = req.body;
-      
-      const appId = (process.env.CASHFREE_APP_ID || "").trim();
-      const secretKey = (process.env.CASHFREE_SECRET_KEY || "").trim();
+      const appId = process.env.CASHFREE_APP_ID;
+      const secretKey = process.env.CASHFREE_SECRET_KEY;
+      const envVar = process.env.CASHFREE_ENV || 'PRODUCTION';
 
-      // Ensure SDK is initialized with latest env vars
-      const CFModule = await import("cashfree-pg");
-      const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
-      const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
-      const Configuration = CFModule.Configuration || (CFModule as any).default?.Configuration;
-
-      const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-      const env = isProduction 
-        ? (CFEnvironment?.PRODUCTION || "PRODUCTION")
-        : (CFEnvironment?.SANDBOX || "SANDBOX");
-
-      let cashfreeInstance;
-      if (Configuration) {
-        const config = new (Configuration as any)({
-          xClientId: appId,
-          xClientSecret: secretKey,
-          xEnvironment: env
+      if (!appId || !secretKey || appId === 'your_cashfree_app_id_here' || appId === 'TEST_APP_ID') {
+        return res.status(500).json({
+          error: 'Cashfree credentials not configured',
+          message: 'Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in your environment variables.'
         });
-        cashfreeInstance = new (Cashfree as any)(config);
-      } else if (Cashfree) {
-        (Cashfree as any).XClientId = appId;
-        (Cashfree as any).XClientSecret = secretKey;
-        (Cashfree as any).XEnvironment = env;
-        cashfreeInstance = new (Cashfree as any)();
       }
 
-      const request = {
+      const { Cashfree, CFEnvironment } = await import('cashfree-pg');
+
+      // v5 SDK: static properties first, then instantiate
+      Cashfree.XClientId = appId;
+      Cashfree.XClientSecret = secretKey;
+      Cashfree.XEnvironment = envVar === 'PRODUCTION'
+        ? CFEnvironment.PRODUCTION
+        : CFEnvironment.SANDBOX;
+
+      const cashfree = new Cashfree();
+
+      console.log(`Cashfree: AppID ${appId.substring(0, 6)}... | env=${envVar}`);
+
+      const { amount, customerId, customerPhone, customerEmail, customerName } = req.body;
+
+      if (!amount) {
+        return res.status(400).json({ error: 'Amount is required' });
+      }
+
+      const response = await cashfree.PGCreateOrder('2023-08-01', {
         order_amount: Number(amount),
-        order_currency: "INR",
+        order_currency: 'INR',
         customer_details: {
           customer_id: customerId || `cust_${Date.now()}`,
-          customer_phone: customerPhone || "9999999999",
-          customer_email: customerEmail || "test@example.com",
-          customer_name: customerName || "Test User"
+          customer_phone: customerPhone || '9999999999',
+          customer_email: customerEmail || 'user@example.com',
+          customer_name: customerName || 'User',
         },
         order_meta: {
-          return_url: `${req.headers.origin}/payment-status?order_id={order_id}`
-        }
-      };
+          return_url: `${req.headers.origin || 'https://vishwasini.com'}/payment-status?order_id={order_id}`,
+        },
+      });
 
-      // v5 SDK: Use instance method
-      const response = await cashfreeInstance.PGCreateOrder(request);
-      console.log("Cashfree order created:", response.data.order_id);
-      res.json(response.data);
+      if (!response.data?.payment_session_id) {
+        return res.status(400).json({
+          error: 'Order creation failed — no session ID returned',
+          details: response.data
+        });
+      }
+
+      console.log('Cashfree order created:', response.data.order_id);
+      return res.status(200).json(response.data);
+
     } catch (error: any) {
-      console.error("Cashfree order error:", error.response?.data || error.message);
-      res.status(500).json({ 
-        error: "Failed to create Cashfree order", 
-        details: error.response?.data || error.message 
+      const cfError = error.response?.data;
+      console.error('Cashfree order error:', cfError || error.message);
+      return res.status(500).json({
+        error: 'Failed to create Cashfree order',
+        details: cfError || error.message
       });
     }
   });
