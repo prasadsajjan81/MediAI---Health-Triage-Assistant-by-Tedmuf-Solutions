@@ -71,9 +71,9 @@ async function startServer() {
   });
 
   app.get("/api/payments/config", (req, res) => {
-    const appId = process.env.CASHFREE_APP_ID;
+    const appId = process.env.CASHFREE_APP_ID || "";
     res.json({ 
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID || "",
       cashfreeAppId: appId,
       cashfreeEnv: process.env.CASHFREE_ENV || "PRODUCTION",
       isConfigured: !!(appId && appId.length > 10)

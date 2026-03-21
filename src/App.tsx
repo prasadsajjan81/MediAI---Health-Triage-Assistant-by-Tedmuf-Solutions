@@ -71,6 +71,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 const INITIAL_PATIENT_DATA: PatientData = {
   patientName: '',
+  phoneNumber: '',
   age: '',
   sex: Gender.Male,
   language: Language.Auto,
@@ -153,10 +154,11 @@ export default function App() {
     }
 
     let q;
-    if (canAccessProfessionalPanel && activeTab === 'doctor') {
+    // Privacy: Only Admin can see ALL data. Doctors/Students/Hospitals see only their own data.
+    if (isAdmin && activeTab === 'doctor') {
       q = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(dashboardLimit));
     } else {
-      q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(50));
+      q = query(collection(db, 'analyses'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(activeTab === 'doctor' ? dashboardLimit : 50));
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -227,6 +229,7 @@ export default function App() {
         userId: user.uid,
         createdAt: new Date().toISOString(),
         patientName: patientData.patientName,
+        patientPhone: patientData.phoneNumber,
         patientAge: patientData.age,
         patientSex: patientData.sex,
         duration: patientData.duration,

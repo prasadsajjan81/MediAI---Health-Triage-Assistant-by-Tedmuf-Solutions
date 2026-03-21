@@ -46,6 +46,7 @@ export const generatePDF = async (record: AnalysisRecord) => {
           <div style="grid-column: span 2; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 5px;">
             <h3 style="margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Patient Name</h3>
             <p style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a;">${record.patientName}</p>
+            ${record.patientPhone ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #0d9488; font-weight: 600;">Phone: ${record.patientPhone}</p>` : ''}
           </div>
           ` : ''}
           <div>

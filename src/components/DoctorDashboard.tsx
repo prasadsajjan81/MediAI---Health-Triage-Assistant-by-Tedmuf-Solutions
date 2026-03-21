@@ -39,6 +39,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
       const term = searchTerm.toLowerCase();
       const match = 
         (record.patientName || '').toLowerCase().includes(term) ||
+        (record.patientPhone || '').toLowerCase().includes(term) ||
         (record.conditions || '').toLowerCase().includes(term) ||
         (record.summaryQuick || '').toLowerCase().includes(term) ||
         (record.patientAge || '').includes(term);
@@ -141,6 +142,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
                                     {record.patientName && (
                                       <div className="text-xs text-slate-500 mt-0.5">
                                           {record.patientAge} yrs, {record.patientSex}
+                                      </div>
+                                    )}
+                                    {record.patientPhone && (
+                                      <div className="text-xs font-medium text-teal-700 mt-0.5">
+                                          {record.patientPhone}
                                       </div>
                                     )}
                                     <div className="text-xs text-slate-500 mt-0.5">

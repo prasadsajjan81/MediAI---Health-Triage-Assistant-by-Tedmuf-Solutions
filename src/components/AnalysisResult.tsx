@@ -118,6 +118,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ markdown, language, pat
       id: recordId || 'live',
       createdAt: new Date().toISOString(),
       patientName: patientData?.patientName,
+      patientPhone: patientData?.phoneNumber,
       patientAge: patientData?.age,
       patientSex: patientData?.sex?.toString(),
       duration: patientData?.duration,
