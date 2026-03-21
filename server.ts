@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import cors from "cors";
 import Razorpay from "razorpay";
+// import { Cashfree } from "cashfree-pg";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -19,7 +20,7 @@ async function startServer() {
   console.log("--- Starting Vishwasini - MediAI Server ---");
   const app = express();
 
-  app.use(cors());
+  // app.use(cors());
   app.use(express.json());
 
   // Razorpay setup
@@ -29,13 +30,57 @@ async function startServer() {
   });
   console.log("Razorpay SDK initialized.");
 
+  // Cashfree setup
+  const { Cashfree } = await import("cashfree-pg");
+  (Cashfree as any).XClientId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
+  (Cashfree as any).XClientSecret = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
+  (Cashfree as any).XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+    ? (Cashfree as any).Environment.PRODUCTION 
+    : (Cashfree as any).Environment.SANDBOX;
+  console.log(`Cashfree SDK initialized in ${process.env.CASHFREE_ENV || 'SANDBOX'} mode.`);
+
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", uptime: process.uptime(), env: process.env.NODE_ENV });
   });
 
   app.get("/api/payments/config", (req, res) => {
-    res.json({ keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_your_key_id" });
+    res.json({ 
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+      cashfreeAppId: process.env.CASHFREE_APP_ID || "TEST_APP_ID",
+      cashfreeEnv: process.env.CASHFREE_ENV || "TEST"
+    });
+  });
+
+  // Cashfree Order Creation
+  app.post("/api/cashfree/order", async (req, res) => {
+    try {
+      const { amount, customerId, customerPhone, customerEmail, customerName } = req.body;
+      
+      const request = {
+        order_amount: Number(amount),
+        order_currency: "INR",
+        customer_details: {
+          customer_id: customerId || `cust_${Date.now()}`,
+          customer_phone: customerPhone || "9999999999",
+          customer_email: customerEmail || "test@example.com",
+          customer_name: customerName || "Test User"
+        },
+        order_meta: {
+          return_url: `${req.headers.origin}/payment-status?order_id={order_id}`
+        }
+      };
+
+      const response = await (Cashfree as any).PGCreateOrder("2023-08-01", request);
+      console.log("Cashfree order created:", response.data.order_id);
+      res.json(response.data);
+    } catch (error: any) {
+      console.error("Cashfree order error:", error.response?.data || error.message);
+      res.status(500).json({ 
+        error: "Failed to create Cashfree order", 
+        details: error.response?.data || error.message 
+      });
+    }
   });
 
   app.post("/api/payments/order", async (req, res) => {

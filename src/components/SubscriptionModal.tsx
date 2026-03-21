@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { X, Check, CreditCard, Sparkles, ShieldCheck, Zap, GraduationCap, Stethoscope, Building2, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Check, CreditCard, Sparkles, ShieldCheck, Zap, GraduationCap, Stethoscope, Building2, User, Wallet } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../AuthContext';
 import { useGlobal } from '../context/GlobalContext';
 import { SubscriptionPlan } from '../types';
+import { load } from '@cashfreepayments/cashfree-js';
 
 declare global {
   interface Window {
@@ -90,6 +91,24 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   const { currency, currencySymbol, country } = useGlobal();
   const [loading, setLoading] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [paymentGateway, setPaymentGateway] = useState<'razorpay' | 'cashfree'>('cashfree');
+  const [cashfree, setCashfree] = useState<any>(null);
+
+  useEffect(() => {
+    const initCashfree = async () => {
+      try {
+        const configRes = await fetch('/api/payments/config');
+        const { cashfreeEnv } = await configRes.json();
+        const cf = await load({
+          mode: cashfreeEnv === 'PRODUCTION' ? 'production' : 'sandbox'
+        });
+        setCashfree(cf);
+      } catch (err) {
+        console.error("Failed to initialize Cashfree:", err);
+      }
+    };
+    initCashfree();
+  }, []);
 
   if (!isOpen) return null;
 
@@ -107,7 +126,88 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     return Math.round(inr / 80); // Default to USD-like conversion
   };
 
-  const handlePayment = async (planId: SubscriptionPlan, amount: number) => {
+  const handleSubscriptionUpdate = async (planId: SubscriptionPlan) => {
+    if (!profile) return;
+    const userRef = doc(db, 'users', profile.uid);
+    const endDate = new Date();
+    if (billingCycle === 'yearly') {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
+
+    let newRole: 'user' | 'student' | 'doctor' | 'hospital' | 'admin' = 'user';
+    if (planId === SubscriptionPlan.Student) newRole = 'student';
+    else if (planId === SubscriptionPlan.Doctor) newRole = 'doctor';
+    else if (planId === SubscriptionPlan.Hospital) newRole = 'hospital';
+    else if (planId === SubscriptionPlan.Patient) newRole = 'user';
+
+    if (profile.role === 'admin') {
+      newRole = 'admin';
+    }
+
+    try {
+      await updateDoc(userRef, {
+        subscriptionStatus: 'active',
+        subscriptionPlan: planId,
+        subscriptionEndDate: endDate.toISOString(),
+        role: newRole
+      });
+      alert(`Payment Successful! Your ${planId} subscription is now active.`);
+      onClose();
+    } catch (error) {
+      console.error("Error updating user profile after payment:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${profile.uid}`);
+    }
+  };
+
+  const handleCashfreePayment = async (planId: SubscriptionPlan, amount: number) => {
+    if (!profile || !cashfree) return;
+    setLoading(planId);
+
+    try {
+      const response = await fetch('/api/cashfree/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          customerId: profile.uid,
+          customerName: profile.displayName || "User",
+          customerEmail: profile.email || "user@example.com",
+          customerPhone: "9999999999"
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details?.message || "Failed to create Cashfree order");
+      }
+
+      const orderData = await response.json();
+      
+      let checkoutOptions = {
+        paymentSessionId: orderData.payment_session_id,
+        redirectTarget: "_modal",
+      };
+
+      cashfree.checkout(checkoutOptions).then((result: any) => {
+        if (result.error) {
+          alert(result.error.message);
+        }
+        if (result.paymentDetails) {
+          handleSubscriptionUpdate(planId);
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Cashfree error:", error);
+      alert(`Payment error: ${error.message}`);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleRazorpayPayment = async (planId: SubscriptionPlan, amount: number) => {
     if (!profile) return;
     setLoading(planId);
 
@@ -132,11 +232,11 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
       // 2. Get Razorpay Key
       const configRes = await fetch('/api/payments/config');
-      const { keyId } = await configRes.json();
+      const { razorpayKeyId } = await configRes.json();
 
       // 3. Open Razorpay Checkout
       const options = {
-        key: keyId,
+        key: razorpayKeyId,
         amount: order.amount,
         currency: order.currency,
         name: "MediAI",
@@ -157,49 +257,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
           const verifyData = await verifyRes.json();
 
           if (verifyData.status === 'success') {
-            // 5. Update Subscription and Role in Firestore
-            const userRef = doc(db, 'users', profile.uid);
-            const endDate = new Date();
-            if (billingCycle === 'yearly') {
-              endDate.setFullYear(endDate.getFullYear() + 1);
-            } else {
-              endDate.setMonth(endDate.getMonth() + 1);
-            }
-
-            // Map plan to role
-            let newRole: 'user' | 'student' | 'doctor' | 'hospital' | 'admin' = 'user';
-            if (planId === SubscriptionPlan.Student) newRole = 'student';
-            else if (planId === SubscriptionPlan.Doctor) newRole = 'doctor';
-            else if (planId === SubscriptionPlan.Hospital) newRole = 'hospital';
-            else if (planId === SubscriptionPlan.Patient) newRole = 'user';
-
-            // If user is admin, keep admin role
-            if (profile.role === 'admin') {
-              newRole = 'admin';
-            }
-
-            console.log("Updating user profile with:", {
-              subscriptionStatus: 'active',
-              subscriptionPlan: planId,
-              role: newRole
-            });
-
-            try {
-              console.log("Attempting Firestore update for user:", profile.uid);
-              await updateDoc(userRef, {
-                subscriptionStatus: 'active',
-                subscriptionPlan: planId,
-                subscriptionEndDate: endDate.toISOString(),
-                role: newRole
-              });
-              console.log("Firestore update successful. New role:", newRole);
-
-              alert(`Payment Successful! Your ${planId} subscription is now active. Role: ${newRole}`);
-              onClose();
-            } catch (error) {
-              console.error("Error updating user profile after payment:", error);
-              handleFirestoreError(error, OperationType.UPDATE, `users/${profile.uid}`);
-            }
+            handleSubscriptionUpdate(planId);
           } else {
             alert(`Payment verification failed: ${verifyData.message || "Unknown error"}`);
           }
@@ -209,7 +267,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
           email: profile.email,
         },
         theme: {
-          color: "#7c3aed",
+          color: "#0d9488",
         },
       };
 
@@ -223,6 +281,14 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       alert(`Payment error: ${error.message || "Something went wrong with the payment process."}`);
     } finally {
       setLoading(null);
+    }
+  };
+
+  const handlePayment = (planId: SubscriptionPlan, amount: number) => {
+    if (paymentGateway === 'cashfree') {
+      handleCashfreePayment(planId, amount);
+    } else {
+      handleRazorpayPayment(planId, amount);
     }
   };
 
@@ -243,19 +309,38 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               <h2 className="text-3xl font-sans font-bold text-slate-900 mb-2">Choose Your Plan</h2>
               <p className="text-slate-500">Select the best model for your needs and start your journey with MediAI</p>
               
-              <div className="mt-6 inline-flex p-1 bg-slate-100 rounded-xl">
-                <button 
-                  onClick={() => setBillingCycle('monthly')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${billingCycle === 'monthly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
-                >
-                  Monthly
-                </button>
-                <button 
-                  onClick={() => setBillingCycle('yearly')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${billingCycle === 'yearly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
-                >
-                  Yearly
-                </button>
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="inline-flex p-1 bg-slate-100 rounded-xl">
+                  <button 
+                    onClick={() => setBillingCycle('monthly')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${billingCycle === 'monthly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                  >
+                    Monthly
+                  </button>
+                  <button 
+                    onClick={() => setBillingCycle('yearly')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${billingCycle === 'yearly' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                  >
+                    Yearly
+                  </button>
+                </div>
+
+                <div className="inline-flex p-1 bg-slate-100 rounded-xl">
+                  <button 
+                    onClick={() => setPaymentGateway('cashfree')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center space-x-2 cursor-pointer ${paymentGateway === 'cashfree' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                  >
+                    <Wallet size={14} />
+                    <span>Cashfree</span>
+                  </button>
+                  <button 
+                    onClick={() => setPaymentGateway('razorpay')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center space-x-2 cursor-pointer ${paymentGateway === 'razorpay' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                  >
+                    <CreditCard size={14} />
+                    <span>Razorpay</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -330,7 +415,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
           <div className="p-6 bg-slate-100 flex items-center justify-center space-x-8 text-slate-400">
             <div className="flex items-center space-x-1">
               <ShieldCheck size={16} />
-              <span className="text-xs">Secure Razorpay Payment</span>
+              <span className="text-xs">Secure {paymentGateway === 'cashfree' ? 'Cashfree' : 'Razorpay'} Payment</span>
             </div>
             <div className="flex items-center space-x-1">
               <Sparkles size={16} />
