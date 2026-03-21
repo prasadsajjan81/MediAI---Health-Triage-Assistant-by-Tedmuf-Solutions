@@ -76,6 +76,7 @@ async function startServer() {
       const CFModule = await import("cashfree-pg");
       const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
       const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
+      const Configuration = CFModule.Configuration || (CFModule as any).default?.Configuration;
       
       if (!Cashfree) {
         return res.status(500).json({ error: "Cashfree SDK not found" });
@@ -89,12 +90,25 @@ async function startServer() {
 
       console.log(`Testing Cashfree with AppID: ${appId.substring(0, 8)}... Env: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
 
-      // Initialize static properties (v5 fallback)
-      (Cashfree as any).XClientId = appId || "TEST_APP_ID";
-      (Cashfree as any).XClientSecret = secretKey || "TEST_SECRET_KEY";
-      (Cashfree as any).XEnvironment = env;
-
-      const cashfreeInstance = new (Cashfree as any)();
+      let cashfreeInstance;
+      
+      if (Configuration) {
+        // Preferred v5 way: use Configuration object
+        const config = new (Configuration as any)({
+          xClientId: appId,
+          xClientSecret: secretKey,
+          xEnvironment: env
+        });
+        cashfreeInstance = new (Cashfree as any)(config);
+        console.log("Initialized using Configuration object");
+      } else {
+        // Fallback: set static properties
+        (Cashfree as any).XClientId = appId;
+        (Cashfree as any).XClientSecret = secretKey;
+        (Cashfree as any).XEnvironment = env;
+        cashfreeInstance = new (Cashfree as any)();
+        console.log("Initialized using static properties");
+      }
 
       const request = {
         order_amount: 1.00,
@@ -114,10 +128,11 @@ async function startServer() {
       res.json({ 
         status: "SUCCESS", 
         order_id: response.data?.order_id,
-        message: "v5 SDK instance call successful",
+        message: "v5 SDK call successful",
         debug: {
           appIdPrefix: appId.substring(0, 4),
-          envUsed: isProduction ? 'PRODUCTION' : 'SANDBOX'
+          envUsed: isProduction ? 'PRODUCTION' : 'SANDBOX',
+          initMethod: Configuration ? "Configuration" : "Static"
         }
       });
     } catch (error: any) {
@@ -127,7 +142,8 @@ async function startServer() {
         details: error.response?.data,
         debug: {
           appIdPrefix: (process.env.CASHFREE_APP_ID || "").trim().substring(0, 4),
-          envUsed: process.env.CASHFREE_ENV
+          envUsed: process.env.CASHFREE_ENV,
+          errorType: error.response?.data?.type || "unknown"
         }
       });
     }
@@ -145,14 +161,26 @@ async function startServer() {
       const CFModule = await import("cashfree-pg");
       const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
       const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
+      const Configuration = CFModule.Configuration || (CFModule as any).default?.Configuration;
 
-      if (Cashfree) {
+      const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
+      const env = isProduction 
+        ? (CFEnvironment?.PRODUCTION || "PRODUCTION")
+        : (CFEnvironment?.SANDBOX || "SANDBOX");
+
+      let cashfreeInstance;
+      if (Configuration) {
+        const config = new (Configuration as any)({
+          xClientId: appId,
+          xClientSecret: secretKey,
+          xEnvironment: env
+        });
+        cashfreeInstance = new (Cashfree as any)(config);
+      } else if (Cashfree) {
         (Cashfree as any).XClientId = appId;
         (Cashfree as any).XClientSecret = secretKey;
-        const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-        (Cashfree as any).XEnvironment = isProduction 
-          ? (CFEnvironment?.PRODUCTION || "PRODUCTION")
-          : (CFEnvironment?.SANDBOX || "SANDBOX");
+        (Cashfree as any).XEnvironment = env;
+        cashfreeInstance = new (Cashfree as any)();
       }
 
       const request = {
@@ -170,7 +198,6 @@ async function startServer() {
       };
 
       // v5 SDK: Use instance method
-      const cashfreeInstance = new (Cashfree as any)();
       const response = await cashfreeInstance.PGCreateOrder(request);
       console.log("Cashfree order created:", response.data.order_id);
       res.json(response.data);

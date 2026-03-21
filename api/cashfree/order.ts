@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log("Cashfree order request body:", JSON.stringify(req.body));
 
-    const { Cashfree, CFEnvironment } = await import("cashfree-pg");
+    const { Cashfree, CFEnvironment, Configuration } = await import("cashfree-pg");
 
     const appId = (process.env.CASHFREE_APP_ID || "").trim();
     const secretKey = (process.env.CASHFREE_SECRET_KEY || "").trim();
@@ -20,18 +20,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // v5 SDK: set static properties, then instantiate
-    (Cashfree as any).XClientId = appId;
-    (Cashfree as any).XClientSecret = secretKey;
-    
     // Auto-detect environment based on App ID prefix
     const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-    (Cashfree as any).XEnvironment = isProduction
+    const env = isProduction
       ? (CFEnvironment as any).PRODUCTION
       : (CFEnvironment as any).SANDBOX;
 
-    // Create an instance — PGCreateOrder is an instance method in v5
-    const cashfree = new (Cashfree as any)();
+    let cashfree;
+    if (Configuration) {
+      const config = new (Configuration as any)({
+        xClientId: appId,
+        xClientSecret: secretKey,
+        xEnvironment: env
+      });
+      cashfree = new (Cashfree as any)(config);
+    } else {
+      // v5 SDK fallback: set static properties, then instantiate
+      (Cashfree as any).XClientId = appId;
+      (Cashfree as any).XClientSecret = secretKey;
+      (Cashfree as any).XEnvironment = env;
+      cashfree = new (Cashfree as any)();
+    }
 
     console.log(`Initializing Cashfree with AppID: ${appId.substring(0, 4)}... in ${isProduction ? 'PRODUCTION' : 'SANDBOX'} mode.`);
 
