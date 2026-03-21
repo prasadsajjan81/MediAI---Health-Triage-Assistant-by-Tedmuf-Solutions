@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/payments/config",
+      "destination": "/api/payments/config.ts"
+    },
+    {
+      "source": "/api/cashfree/order",
+      "destination": "/api/cashfree/order.ts"
+    },
+    {
+      "source": "/api/payments/order",
+      "destination": "/api/payments/order.ts"
+    },
+    {
+      "source": "/api/payments/verify",
+      "destination": "/api/payments/verify.ts"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/health.ts"
+    }
+  ]
+}

@@ -97,10 +97,20 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   useEffect(() => {
     const initCashfree = async () => {
       try {
+        console.log("Fetching payment config...");
         const configRes = await fetch('/api/payments/config');
-        const { cashfreeEnv } = await configRes.json();
+        
+        if (!configRes.ok) {
+          const text = await configRes.text();
+          console.error(`Failed to fetch config: ${configRes.status} ${configRes.statusText}`, text);
+          throw new Error(`Config fetch failed: ${configRes.status}`);
+        }
+
+        const configData = await configRes.json();
+        console.log("Payment config loaded:", configData);
+        
         const cf = await load({
-          mode: cashfreeEnv === 'PRODUCTION' ? 'production' : 'sandbox'
+          mode: configData.cashfreeEnv === 'PRODUCTION' ? 'production' : 'sandbox'
         });
         setCashfree(cf);
       } catch (err) {
