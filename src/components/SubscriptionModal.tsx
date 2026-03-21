@@ -110,7 +110,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         const configData = await configRes.json();
         console.log("Payment config loaded:", configData);
         
-        if (!configData.cashfreeAppId || configData.cashfreeAppId === 'your_cashfree_app_id_here' || configData.cashfreeAppId === 'TEST_APP_ID') {
+        if (!configData.cashfreeAppId || configData.cashfreeAppId.length < 10) {
           console.warn("Cashfree App ID is not configured.");
           setIsCashfreeConfigured(false);
         } else {

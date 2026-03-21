@@ -73,10 +73,10 @@ async function startServer() {
   app.get("/api/payments/config", (req, res) => {
     const appId = process.env.CASHFREE_APP_ID;
     res.json({ 
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID || "rzp_test_your_key_id",
-      cashfreeAppId: appId || "NOT_SET",
-      cashfreeEnv: process.env.CASHFREE_ENV || "TEST",
-      isConfigured: !!(appId && appId !== 'your_cashfree_app_id_here' && appId !== 'TEST_APP_ID')
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      cashfreeAppId: appId,
+      cashfreeEnv: process.env.CASHFREE_ENV || "PRODUCTION",
+      isConfigured: !!(appId && appId.length > 10)
     });
   });
 
@@ -86,7 +86,7 @@ async function startServer() {
     const secretKey = (process.env.CASHFREE_SECRET_KEY || '').trim();
     const envVar = (process.env.CASHFREE_ENV || 'PRODUCTION').trim();
 
-    if (!appId || !secretKey || appId === 'your_cashfree_app_id_here') {
+    if (!appId || !secretKey || appId.length < 10) {
       return res.status(500).json({
         error: 'Cashfree credentials not configured',
         fix: 'Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in your environment variables.'
@@ -191,7 +191,7 @@ async function startServer() {
       const secretKey = (process.env.CASHFREE_SECRET_KEY || '').trim();
       const envVar = (process.env.CASHFREE_ENV || 'PRODUCTION').trim();
 
-      if (!appId || !secretKey || appId === 'your_cashfree_app_id_here' || appId === 'TEST_APP_ID') {
+      if (!appId || !secretKey || appId.length < 10) {
         return res.status(500).json({
           error: 'Cashfree credentials not configured',
           message: 'Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in your environment variables.'

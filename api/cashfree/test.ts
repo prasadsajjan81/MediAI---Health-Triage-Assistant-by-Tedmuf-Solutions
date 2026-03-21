@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const secretKey = (process.env.CASHFREE_SECRET_KEY || '').trim();
   const envVar = (process.env.CASHFREE_ENV || 'PRODUCTION').trim();
 
-  if (!appId || !secretKey || appId === 'your_cashfree_app_id_here') {
+  if (!appId || !secretKey || appId.length < 10) {
     return res.status(500).json({
       error: 'Cashfree credentials not configured',
       fix: 'Set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in your environment variables.'
