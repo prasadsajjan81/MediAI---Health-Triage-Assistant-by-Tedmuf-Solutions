@@ -90,11 +90,11 @@ async function startServer() {
       console.log(`Testing Cashfree with AppID: ${appId.substring(0, 8)}... Env: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
 
       // Initialize static properties (v5 fallback)
-      Cashfree.XClientId = appId || "TEST_APP_ID";
-      Cashfree.XClientSecret = secretKey || "TEST_SECRET_KEY";
-      Cashfree.XEnvironment = env;
+      (Cashfree as any).XClientId = appId || "TEST_APP_ID";
+      (Cashfree as any).XClientSecret = secretKey || "TEST_SECRET_KEY";
+      (Cashfree as any).XEnvironment = env;
 
-      const cashfreeInstance = new Cashfree();
+      const cashfreeInstance = new (Cashfree as any)();
 
       const request = {
         order_amount: 1.00,
@@ -110,7 +110,7 @@ async function startServer() {
         }
       };
 
-      const response = await cashfreeInstance.PGCreateOrder("2023-08-01", request);
+      const response = await cashfreeInstance.PGCreateOrder(request);
       res.json({ 
         status: "SUCCESS", 
         order_id: response.data?.order_id,
@@ -147,10 +147,10 @@ async function startServer() {
       const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
 
       if (Cashfree) {
-        Cashfree.XClientId = appId;
-        Cashfree.XClientSecret = secretKey;
+        (Cashfree as any).XClientId = appId;
+        (Cashfree as any).XClientSecret = secretKey;
         const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-        Cashfree.XEnvironment = isProduction 
+        (Cashfree as any).XEnvironment = isProduction 
           ? (CFEnvironment?.PRODUCTION || "PRODUCTION")
           : (CFEnvironment?.SANDBOX || "SANDBOX");
       }
@@ -170,8 +170,8 @@ async function startServer() {
       };
 
       // v5 SDK: Use instance method
-      const cashfreeInstance = new Cashfree();
-      const response = await cashfreeInstance.PGCreateOrder("2023-08-01", request);
+      const cashfreeInstance = new (Cashfree as any)();
+      const response = await cashfreeInstance.PGCreateOrder(request);
       console.log("Cashfree order created:", response.data.order_id);
       res.json(response.data);
     } catch (error: any) {

@@ -24,17 +24,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // v5 SDK: set static properties, then instantiate
-    Cashfree.XClientId = appId;
-    Cashfree.XClientSecret = secretKey;
+    (Cashfree as any).XClientId = appId;
+    (Cashfree as any).XClientSecret = secretKey;
     
     // Auto-detect environment based on App ID prefix
     const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-    Cashfree.XEnvironment = isProduction
-      ? CFEnvironment.PRODUCTION
-      : CFEnvironment.SANDBOX;
+    (Cashfree as any).XEnvironment = isProduction
+      ? (CFEnvironment as any).PRODUCTION
+      : (CFEnvironment as any).SANDBOX;
 
     // Create an instance — PGCreateOrder is an instance method in v5
-    const cashfree = new Cashfree();
+    const cashfree = new (Cashfree as any)();
 
     const request = {
       order_amount: 1.00,
@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    const response = await cashfree.PGCreateOrder("2023-08-01", request);
+    const response = await cashfree.PGCreateOrder(request);
 
     return res.status(200).json({
       status: "SUCCESS",

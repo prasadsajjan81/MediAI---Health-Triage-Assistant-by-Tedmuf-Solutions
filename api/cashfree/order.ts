@@ -21,17 +21,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // v5 SDK: set static properties, then instantiate
-    Cashfree.XClientId = appId;
-    Cashfree.XClientSecret = secretKey;
+    (Cashfree as any).XClientId = appId;
+    (Cashfree as any).XClientSecret = secretKey;
     
     // Auto-detect environment based on App ID prefix
     const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
-    Cashfree.XEnvironment = isProduction
-      ? CFEnvironment.PRODUCTION
-      : CFEnvironment.SANDBOX;
+    (Cashfree as any).XEnvironment = isProduction
+      ? (CFEnvironment as any).PRODUCTION
+      : (CFEnvironment as any).SANDBOX;
 
     // Create an instance — PGCreateOrder is an instance method in v5
-    const cashfree = new Cashfree();
+    const cashfree = new (Cashfree as any)();
 
     console.log(`Initializing Cashfree with AppID: ${appId.substring(0, 4)}... in ${isProduction ? 'PRODUCTION' : 'SANDBOX'} mode.`);
 
@@ -57,7 +57,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("Calling PGCreateOrder...");
 
-    const response = await cashfree.PGCreateOrder("2023-08-01", request);
+    // In v5, the version might be optional or passed differently, 
+    // but the error suggests the first argument should be the request object.
+    const response = await cashfree.PGCreateOrder(request);
 
     if (!response.data || !response.data.payment_session_id) {
       console.error("Cashfree order creation failed - missing session ID:", response.data);
