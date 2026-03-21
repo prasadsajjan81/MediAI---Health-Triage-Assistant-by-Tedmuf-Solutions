@@ -158,6 +158,7 @@ async function startServer() {
       return res.status(200).json({
         status: 'SUCCESS',
         message: 'Cashfree is working correctly',
+        method: 'direct-rest-no-sdk',
         order_id: cashfreeResponse.data?.order_id,
         environment: envVar,
       });
@@ -256,7 +257,10 @@ async function startServer() {
       }
 
       console.log('Cashfree order created:', cashfreeResponse.data.order_id);
-      return res.status(200).json(cashfreeResponse.data);
+      return res.status(200).json({
+        ...cashfreeResponse.data,
+        method: 'direct-rest-no-sdk'
+      });
 
     } catch (error: any) {
       console.error('Cashfree order error:', error.message);

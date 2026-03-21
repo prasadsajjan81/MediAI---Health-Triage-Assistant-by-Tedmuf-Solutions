@@ -94,6 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       status: 'SUCCESS',
       message: 'Cashfree is working correctly',
+      method: 'direct-rest-no-sdk',
       order_id: cashfreeResponse.data?.order_id,
       environment: envVar,
     });

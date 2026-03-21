@@ -89,7 +89,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log('Cashfree order created:', cashfreeResponse.data.order_id);
-    return res.status(200).json(cashfreeResponse.data);
+    return res.status(200).json({
+      ...cashfreeResponse.data,
+      method: 'direct-rest-no-sdk'
+    });
 
   } catch (error: any) {
     console.error('Cashfree order error:', error.message);
