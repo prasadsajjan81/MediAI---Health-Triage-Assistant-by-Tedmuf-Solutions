@@ -10,45 +10,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // Import the module
     const CFModule = await import("cashfree-pg");
-    
-    // Deep search for PGCreateOrder
-    const findFunction = (obj: any, path = "root", depth = 0): any => {
-      if (depth > 3 || !obj || typeof obj !== 'object') return null;
-      if (typeof obj.PGCreateOrder === 'function') return obj;
-      
-      for (const key of Object.keys(obj)) {
-        try {
-          const found = findFunction(obj[key], `${path}.${key}`, depth + 1);
-          if (found) return found;
-        } catch (e) {}
-      }
-      return null;
-    };
+    const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
+    const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
 
-    const cf = findFunction(CFModule);
-
-    if (!cf || typeof cf.PGCreateOrder !== 'function') {
-      console.error("Cashfree module structure keys:", Object.keys(CFModule));
-      if ((CFModule as any).default) console.error("Default export keys:", Object.keys((CFModule as any).default));
-      throw new Error(`Cashfree SDK failed to load: Could not find valid Cashfree object with PGCreateOrder. Found keys: ${Object.keys(CFModule).join(', ')}`);
+    if (!Cashfree || !CFEnvironment) {
+      console.error("Cashfree SDK failed to load properly. Module keys:", Object.keys(CFModule));
+      throw new Error(`Cashfree SDK failed to load: Could not find valid Cashfree object. Found keys: ${Object.keys(CFModule).join(', ')}`);
     }
 
     // Initialize Cashfree inside handler
     const appId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
     const secretKey = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
     
-    cf.XClientId = appId;
-    cf.XClientSecret = secretKey;
+    Cashfree.XClientId = appId;
+    Cashfree.XClientSecret = secretKey;
     
     // Handle Environment
-    const env = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
-    if (cf.Environment) {
-      cf.XEnvironment = cf.Environment[env];
-    } else if (cf.CFEnvironment) {
-      cf.XEnvironment = cf.CFEnvironment[env];
-    } else {
-      cf.XEnvironment = env;
-    }
+    Cashfree.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+      ? CFEnvironment.PRODUCTION 
+      : CFEnvironment.SANDBOX;
 
     console.log(`Initializing Cashfree with AppID: ${appId.substring(0, 4)}... in ${process.env.CASHFREE_ENV || 'SANDBOX'} mode.`);
 
@@ -74,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("Calling PGCreateOrder...");
     
-    const response = await cf.PGCreateOrder("2023-08-01", request);
+    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     
     if (!response.data || !response.data.payment_session_id) {
       console.error("Cashfree order creation failed - missing session ID:", response.data);

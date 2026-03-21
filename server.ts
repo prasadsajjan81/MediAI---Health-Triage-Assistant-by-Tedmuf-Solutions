@@ -32,41 +32,19 @@ async function startServer() {
 
   // Cashfree setup
   const CFModule = await import("cashfree-pg");
-  
-  // Deep search for PGCreateOrder
-  const findFunction = (obj: any, path = "root", depth = 0): any => {
-    if (depth > 3 || !obj || typeof obj !== 'object') return null;
-    if (typeof obj.PGCreateOrder === 'function') return obj;
-    
-    for (const key of Object.keys(obj)) {
-      try {
-        const found = findFunction(obj[key], `${path}.${key}`, depth + 1);
-        if (found) return found;
-      } catch (e) {}
-    }
-    return null;
-  };
+  const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
+  const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
 
-  let cf = findFunction(CFModule);
-
-  if (!cf) {
-    console.error("Cashfree SDK discovery failed. Module keys:", Object.keys(CFModule));
-    // Fallback to the most likely candidate even if check failed, to avoid crash
-    cf = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
-  }
-  
-  cf.XClientId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
-  cf.XClientSecret = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
-  
-  const env = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
-  if (cf.Environment) {
-    cf.XEnvironment = cf.Environment[env];
-  } else if (cf.CFEnvironment) {
-    cf.XEnvironment = cf.CFEnvironment[env];
+  if (!Cashfree || !CFEnvironment) {
+    console.error("Cashfree SDK failed to load properly. Module keys:", Object.keys(CFModule));
   } else {
-    cf.XEnvironment = env;
+    Cashfree.XClientId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
+    Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
+    Cashfree.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+      ? CFEnvironment.PRODUCTION 
+      : CFEnvironment.SANDBOX;
+    console.log(`Cashfree SDK initialized in ${process.env.CASHFREE_ENV || 'SANDBOX'} mode.`);
   }
-  console.log(`Cashfree SDK initialized in ${process.env.CASHFREE_ENV || 'SANDBOX'} mode.`);
 
   // API Routes
   app.get("/api/health", (req, res) => {
@@ -100,7 +78,7 @@ async function startServer() {
         }
       };
 
-      const response = await cf.PGCreateOrder("2023-08-01", request);
+      const response = await Cashfree.PGCreateOrder("2023-08-01", request);
       console.log("Cashfree order created:", response.data.order_id);
       res.json(response.data);
     } catch (error: any) {

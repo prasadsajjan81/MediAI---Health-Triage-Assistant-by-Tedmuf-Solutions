@@ -8,63 +8,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const CFModule = await import("cashfree-pg");
-    const results: any = {
-      moduleKeys: Object.keys(CFModule),
-      attempts: []
-    };
+    const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
+    const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
 
-    // Deep search for PGCreateOrder
-    const findFunction = (obj: any, path = "root", depth = 0): string | null => {
-      if (depth > 3 || !obj || typeof obj !== 'object') return null;
-      if (typeof obj.PGCreateOrder === 'function') return path;
-      
-      for (const key of Object.keys(obj)) {
-        try {
-          const found = findFunction(obj[key], `${path}.${key}`, depth + 1);
-          if (found) return found;
-        } catch (e) {}
-      }
-      return null;
-    };
-
-    const functionPath = findFunction(CFModule);
-    results.foundPath = functionPath;
-
-    if (!functionPath) {
+    if (!Cashfree || !CFEnvironment) {
       return res.status(500).json({
-        error: "Could not find PGCreateOrder anywhere in the module",
-        results
+        error: "Cashfree SDK failed to load properly",
+        moduleKeys: Object.keys(CFModule)
       });
     }
-
-    // Get the function and its parent object
-    const pathParts = functionPath.split('.');
-    let cf: any = CFModule;
-    for (let i = 1; i < pathParts.length; i++) {
-      cf = cf[pathParts[i]];
-    }
-
-    results.finalObjectKeys = Object.keys(cf);
 
     const appId = process.env.CASHFREE_APP_ID;
     const secretKey = process.env.CASHFREE_SECRET_KEY;
     
     if (!appId || !secretKey) {
-      return res.status(500).json({ error: "Cashfree credentials not configured", results });
+      return res.status(500).json({ error: "Cashfree credentials not configured" });
     }
     
     // Initialize
-    cf.XClientId = appId;
-    cf.XClientSecret = secretKey;
-    
-    const env = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
-    if (cf.Environment) {
-      cf.XEnvironment = cf.Environment[env];
-    } else if (cf.CFEnvironment) {
-      cf.XEnvironment = cf.CFEnvironment[env];
-    } else {
-      cf.XEnvironment = env;
-    }
+    Cashfree.XClientId = appId;
+    Cashfree.XClientSecret = secretKey;
+    Cashfree.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+      ? CFEnvironment.PRODUCTION 
+      : CFEnvironment.SANDBOX;
 
     const request = {
       order_amount: 1.00,
@@ -80,13 +46,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    const response = await cf.PGCreateOrder("2023-08-01", request);
+    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
     
     return res.status(200).json({ 
       status: "SUCCESS",
-      pathUsed: functionPath,
       order_id: response.data?.order_id,
-      results
+      environment: process.env.CASHFREE_ENV || "SANDBOX (Default)"
     });
   } catch (error: any) {
     return res.status(500).json({ 
