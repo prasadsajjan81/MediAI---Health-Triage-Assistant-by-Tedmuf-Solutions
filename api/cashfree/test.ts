@@ -7,14 +7,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const CashfreeModule = await import("cashfree-pg");
-    let Cashfree = CashfreeModule.Cashfree;
-    if (!Cashfree && (CashfreeModule as any).default) {
-      Cashfree = (CashfreeModule as any).default.Cashfree || (CashfreeModule as any).default;
-    }
+    const CFModule = await import("cashfree-pg");
+    const Cashfree = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
     
-    if (!Cashfree) {
-      return res.status(500).json({ error: "Cashfree SDK failed to load" });
+    // Some versions might nest it one level deeper
+    const cf = (Cashfree && typeof (Cashfree as any).PGCreateOrder === 'function') ? (Cashfree as any) : (Cashfree as any)?.Cashfree;
+    
+    if (!cf || typeof cf.PGCreateOrder !== 'function') {
+      return res.status(500).json({ 
+        error: "Cashfree SDK failed to load: Could not find valid Cashfree object with PGCreateOrder",
+        moduleKeys: Object.keys(CFModule)
+      });
     }
 
     const appId = process.env.CASHFREE_APP_ID;
@@ -24,7 +27,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Cashfree credentials not configured in environment variables" });
     }
     
-    const cf = Cashfree as any;
     cf.XClientId = appId;
     cf.XClientSecret = secretKey;
     

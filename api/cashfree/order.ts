@@ -9,26 +9,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("Cashfree order request body:", JSON.stringify(req.body));
     
     // Import the module
-    const CashfreeModule = await import("cashfree-pg");
+    const CFModule = await import("cashfree-pg");
     
-    // In ESM, the named export 'Cashfree' should be available
-    // But sometimes it's on .default or the module itself
-    let Cashfree = CashfreeModule.Cashfree;
-    if (!Cashfree && (CashfreeModule as any).default) {
-      Cashfree = (CashfreeModule as any).default.Cashfree || (CashfreeModule as any).default;
-    }
+    // Try to find the Cashfree object in various possible export locations
+    const Cashfree = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
     
-    if (!Cashfree) {
-      console.error("Cashfree module structure:", Object.keys(CashfreeModule));
-      throw new Error("Cashfree SDK failed to load: Cashfree object is undefined");
+    // Some versions might nest it one level deeper
+    const cf = (Cashfree && typeof (Cashfree as any).PGCreateOrder === 'function') ? (Cashfree as any) : (Cashfree as any)?.Cashfree;
+    
+    if (!cf || typeof cf.PGCreateOrder !== 'function') {
+      console.error("Cashfree module structure keys:", Object.keys(CFModule));
+      if ((CFModule as any).default) console.error("Default export keys:", Object.keys((CFModule as any).default));
+      throw new Error("Cashfree SDK failed to load: Could not find valid Cashfree object with PGCreateOrder");
     }
 
     // Initialize Cashfree inside handler
     const appId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
     const secretKey = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
     
-    // Use type casting to avoid TS errors while allowing runtime access
-    const cf = Cashfree as any;
     cf.XClientId = appId;
     cf.XClientSecret = secretKey;
     
@@ -65,12 +63,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("Calling PGCreateOrder...");
     
-    // Check if method exists
-    if (typeof cf.PGCreateOrder !== 'function') {
-      console.error("Available methods on Cashfree:", Object.keys(cf).filter(k => typeof cf[k] === 'function'));
-      throw new Error("Cashfree.PGCreateOrder is not a function at runtime");
-    }
-
     const response = await cf.PGCreateOrder("2023-08-01", request);
     
     if (!response.data || !response.data.payment_session_id) {

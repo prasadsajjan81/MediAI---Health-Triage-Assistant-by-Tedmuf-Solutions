@@ -31,12 +31,20 @@ async function startServer() {
   console.log("Razorpay SDK initialized.");
 
   // Cashfree setup
-  const { Cashfree } = await import("cashfree-pg");
-  (Cashfree as any).XClientId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
-  (Cashfree as any).XClientSecret = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
-  (Cashfree as any).XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
-    ? (Cashfree as any).Environment.PRODUCTION 
-    : (Cashfree as any).Environment.SANDBOX;
+  const CFModule = await import("cashfree-pg");
+  const Cashfree = (CFModule as any).Cashfree || (CFModule as any).default?.Cashfree || (CFModule as any).default || CFModule;
+  
+  const cf = Cashfree as any;
+  cf.XClientId = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
+  cf.XClientSecret = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
+  
+  if (cf.Environment) {
+    cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
+      ? cf.Environment.PRODUCTION 
+      : cf.Environment.SANDBOX;
+  } else {
+    cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
+  }
   console.log(`Cashfree SDK initialized in ${process.env.CASHFREE_ENV || 'SANDBOX'} mode.`);
 
   // API Routes
