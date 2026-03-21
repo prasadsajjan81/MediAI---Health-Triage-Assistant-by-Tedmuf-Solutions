@@ -1,17 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Razorpay from "razorpay";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "placeholder_secret",
-});
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    console.log("Razorpay order request body:", JSON.stringify(req.body));
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder",
+      key_secret: process.env.RAZORPAY_KEY_SECRET || "placeholder_secret",
+    });
+
     const { amount, currency = "INR" } = req.body;
     
     const options = {

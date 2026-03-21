@@ -209,8 +209,16 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details?.message || "Failed to create Cashfree order");
+        let errorMessage = "Failed to create Cashfree order";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.details?.message || errorData.error || errorMessage;
+        } catch (e) {
+          const textError = await response.text();
+          console.error("Server returned non-JSON error:", textError);
+          errorMessage = `Server Error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const orderData = await response.json();
