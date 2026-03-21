@@ -8,58 +8,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const CFModule = await import("cashfree-pg");
-    
-    // Robust discovery logic
-    let cf: any = null;
-    const candidates = [
-      (CFModule as any).Cashfree,
-      (CFModule as any).default?.Cashfree,
-      (CFModule as any).default,
-      CFModule
-    ];
-    
-    for (const cand of candidates) {
-      if (cand && typeof cand.PGCreateOrder === 'function') {
-        cf = cand;
-        break;
+    const results: any = {
+      moduleKeys: Object.keys(CFModule),
+      attempts: []
+    };
+
+    // Deep search for PGCreateOrder
+    const findFunction = (obj: any, path = "root", depth = 0): string | null => {
+      if (depth > 3 || !obj || typeof obj !== 'object') return null;
+      if (typeof obj.PGCreateOrder === 'function') return path;
+      
+      for (const key of Object.keys(obj)) {
+        try {
+          const found = findFunction(obj[key], `${path}.${key}`, depth + 1);
+          if (found) return found;
+        } catch (e) {}
       }
+      return null;
+    };
+
+    const functionPath = findFunction(CFModule);
+    results.foundPath = functionPath;
+
+    if (!functionPath) {
+      return res.status(500).json({
+        error: "Could not find PGCreateOrder anywhere in the module",
+        results
+      });
     }
 
-    if (!cf || typeof cf.PGCreateOrder !== 'function') {
-      // One more try: check if it's nested inside the named Cashfree export
-      if ((CFModule as any).Cashfree && (CFModule as any).Cashfree.Cashfree) {
-        cf = (CFModule as any).Cashfree.Cashfree;
-      }
-      
-      if (!cf || typeof cf.PGCreateOrder !== 'function') {
-        return res.status(500).json({ 
-          error: "Cashfree SDK failed to load: Could not find valid Cashfree object with PGCreateOrder",
-          moduleKeys: Object.keys(CFModule),
-          defaultKeys: (CFModule as any).default ? Object.keys((CFModule as any).default) : null
-        });
-      }
+    // Get the function and its parent object
+    const pathParts = functionPath.split('.');
+    let cf: any = CFModule;
+    for (let i = 1; i < pathParts.length; i++) {
+      cf = cf[pathParts[i]];
     }
+
+    results.finalObjectKeys = Object.keys(cf);
 
     const appId = process.env.CASHFREE_APP_ID;
     const secretKey = process.env.CASHFREE_SECRET_KEY;
     
     if (!appId || !secretKey) {
-      return res.status(500).json({ error: "Cashfree credentials not configured in environment variables" });
+      return res.status(500).json({ error: "Cashfree credentials not configured", results });
     }
     
+    // Initialize
     cf.XClientId = appId;
     cf.XClientSecret = secretKey;
     
+    const env = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
     if (cf.Environment) {
-      cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
-        ? cf.Environment.PRODUCTION 
-        : cf.Environment.SANDBOX;
+      cf.XEnvironment = cf.Environment[env];
     } else if (cf.CFEnvironment) {
-      cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
-        ? cf.CFEnvironment.PRODUCTION 
-        : cf.CFEnvironment.SANDBOX;
+      cf.XEnvironment = cf.CFEnvironment[env];
     } else {
-      cf.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" ? "PRODUCTION" : "SANDBOX";
+      cf.XEnvironment = env;
     }
 
     const request = {
@@ -76,28 +80,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    console.log("Verifying Cashfree credentials...");
     const response = await cf.PGCreateOrder("2023-08-01", request);
     
-    if (response.data && response.data.payment_session_id) {
-      return res.status(200).json({ 
-        status: "SUCCESS",
-        message: "Credentials are valid and working!",
-        order_id: response.data.order_id,
-        environment: process.env.CASHFREE_ENV || "PRODUCTION (Default)"
-      });
-    } else {
-      return res.status(401).json({ 
-        status: "FAILED",
-        message: "Credentials might be invalid or environment mismatch.",
-        details: response.data
-      });
-    }
+    return res.status(200).json({ 
+      status: "SUCCESS",
+      pathUsed: functionPath,
+      order_id: response.data?.order_id,
+      results
+    });
   } catch (error: any) {
     return res.status(500).json({ 
       status: "ERROR",
-      message: "An error occurred during verification.",
-      error: error.response?.data || error.message
+      error: error.message,
+      stack: error.stack,
+      details: error.response?.data
     });
   }
 }
