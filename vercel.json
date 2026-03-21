@@ -10,6 +10,10 @@
       "destination": "/api/cashfree/order.ts"
     },
     {
+      "source": "/api/cashfree/test",
+      "destination": "/api/cashfree/test.ts"
+    },
+    {
       "source": "/api/payments/order",
       "destination": "/api/payments/order.ts"
     },
