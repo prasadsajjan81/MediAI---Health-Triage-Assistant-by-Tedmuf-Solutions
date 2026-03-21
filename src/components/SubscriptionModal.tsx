@@ -162,7 +162,27 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   };
 
   const handleCashfreePayment = async (planId: SubscriptionPlan, amount: number) => {
-    if (!profile || !cashfree) return;
+    console.log("Attempting Cashfree payment for:", planId, "Amount:", amount);
+    
+    if (!profile) {
+      console.warn("Payment blocked: No user profile found.");
+      alert("Please sign in to continue with the subscription.");
+      return;
+    }
+
+    if (!cashfree) {
+      console.warn("Payment blocked: Cashfree SDK not initialized.");
+      alert("Payment system is still loading. Please wait a moment and try again.");
+      // Re-attempt initialization if it failed
+      const configRes = await fetch('/api/payments/config');
+      const { cashfreeEnv } = await configRes.json();
+      const cf = await load({
+        mode: cashfreeEnv === 'PRODUCTION' ? 'production' : 'sandbox'
+      });
+      setCashfree(cf);
+      return;
+    }
+
     setLoading(planId);
 
     try {
@@ -208,7 +228,14 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   };
 
   const handleRazorpayPayment = async (planId: SubscriptionPlan, amount: number) => {
-    if (!profile) return;
+    console.log("Attempting Razorpay payment for:", planId, "Amount:", amount);
+    
+    if (!profile) {
+      console.warn("Payment blocked: No user profile found.");
+      alert("Please sign in to continue with the subscription.");
+      return;
+    }
+    
     setLoading(planId);
 
     try {
@@ -285,6 +312,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   };
 
   const handlePayment = (planId: SubscriptionPlan, amount: number) => {
+    console.log("handlePayment triggered for plan:", planId, "amount:", amount);
     if (paymentGateway === 'cashfree') {
       handleCashfreePayment(planId, amount);
     } else {
