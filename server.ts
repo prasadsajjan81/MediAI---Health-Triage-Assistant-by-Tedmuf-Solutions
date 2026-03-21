@@ -15,6 +15,18 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
+// AI Studio / Cloud Run: explicitly pull secrets into process.env
+// AI Studio injects secrets as runtime env vars but sometimes
+// they need to be explicitly referenced to be available
+process.env.CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || '';
+process.env.CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || '';
+process.env.CASHFREE_ENV = process.env.CASHFREE_ENV || 'PRODUCTION';
+
+// Debug — remove after confirming it works
+console.log('CASHFREE_APP_ID:', process.env.CASHFREE_APP_ID ? `SET (${process.env.CASHFREE_APP_ID.substring(0,6)}...)` : 'NOT SET');
+console.log('CASHFREE_SECRET_KEY:', process.env.CASHFREE_SECRET_KEY ? `SET (len=${process.env.CASHFREE_SECRET_KEY.length})` : 'NOT SET');
+console.log('CASHFREE_ENV:', process.env.CASHFREE_ENV);
+
 const PORT = 3000;
 
 async function startServer() {
