@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import * as https from 'https';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -6,9 +7,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const appId = process.env.CASHFREE_APP_ID;
-    const secretKey = process.env.CASHFREE_SECRET_KEY;
-    const envVar = process.env.CASHFREE_ENV || 'PRODUCTION';
+    const appId = (process.env.CASHFREE_APP_ID || '').trim();
+    const secretKey = (process.env.CASHFREE_SECRET_KEY || '').trim();
+    const envVar = (process.env.CASHFREE_ENV || 'PRODUCTION').trim();
 
     if (!appId || !secretKey || appId === 'your_cashfree_app_id_here' || appId === 'TEST_APP_ID') {
       return res.status(500).json({
@@ -17,26 +18,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const { Cashfree, CFEnvironment } = await import('cashfree-pg');
-
-    // v5 SDK: static properties first, then instantiate
-    Cashfree.XClientId = appId;
-    Cashfree.XClientSecret = secretKey;
-    Cashfree.XEnvironment = envVar === 'PRODUCTION'
-      ? CFEnvironment.PRODUCTION
-      : CFEnvironment.SANDBOX;
-
-    const cashfree = new Cashfree();
-
-    console.log(`Cashfree: AppID ${appId.substring(0, 6)}... | env=${envVar}`);
-
     const { amount, customerId, customerPhone, customerEmail, customerName } = req.body;
 
     if (!amount) {
       return res.status(400).json({ error: 'Amount is required' });
     }
 
-    const response = await cashfree.PGCreateOrder('2023-08-01', {
+    const host = envVar === 'PRODUCTION' ? 'api.cashfree.com' : 'sandbox.cashfree.com';
+    
+    const postData = JSON.stringify({
       order_amount: Number(amount),
       order_currency: 'INR',
       customer_details: {
@@ -50,22 +40,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    if (!response.data?.payment_session_id) {
-      return res.status(400).json({
-        error: 'Order creation failed — no session ID returned',
-        details: response.data
+    const options = {
+      hostname: host,
+      port: 443,
+      path: '/pg/orders',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+        'x-api-version': '2023-08-01',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const cashfreeResponse = await new Promise((resolve, reject) => {
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+        response.on('end', () => {
+          try {
+            const parsedData = JSON.parse(data);
+            resolve({
+              statusCode: response.statusCode,
+              data: parsedData
+            });
+          } catch (e) {
+            reject(new Error('Failed to parse Cashfree response'));
+          }
+        });
+      });
+
+      request.on('error', (error) => {
+        reject(error);
+      });
+
+      request.write(postData);
+      request.end();
+    }) as any;
+
+    if (cashfreeResponse.statusCode >= 400) {
+      return res.status(cashfreeResponse.statusCode).json({
+        error: 'Cashfree order creation failed',
+        details: cashfreeResponse.data
       });
     }
 
-    console.log('Cashfree order created:', response.data.order_id);
-    return res.status(200).json(response.data);
+    console.log('Cashfree order created:', cashfreeResponse.data.order_id);
+    return res.status(200).json(cashfreeResponse.data);
 
   } catch (error: any) {
-    const cfError = error.response?.data;
-    console.error('Cashfree order error:', cfError || error.message);
+    console.error('Cashfree order error:', error.message);
     return res.status(500).json({
       error: 'Failed to create Cashfree order',
-      details: cfError || error.message
+      details: error.message
     });
   }
 }
