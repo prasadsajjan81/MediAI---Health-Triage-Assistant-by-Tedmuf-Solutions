@@ -93,6 +93,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [paymentGateway, setPaymentGateway] = useState<'razorpay' | 'cashfree'>('cashfree');
   const [cashfree, setCashfree] = useState<any>(null);
+  const [isCashfreeConfigured, setIsCashfreeConfigured] = useState<boolean>(true);
 
   useEffect(() => {
     const initCashfree = async () => {
@@ -108,6 +109,13 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
         const configData = await configRes.json();
         console.log("Payment config loaded:", configData);
+        
+        if (!configData.cashfreeAppId || configData.cashfreeAppId === 'your_cashfree_app_id_here' || configData.cashfreeAppId === 'TEST_APP_ID') {
+          console.warn("Cashfree App ID is not configured.");
+          setIsCashfreeConfigured(false);
+        } else {
+          setIsCashfreeConfigured(true);
+        }
         
         const cf = await load({
           mode: configData.cashfreeEnv === 'PRODUCTION' ? 'production' : 'sandbox'
@@ -461,7 +469,12 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
           <div className="p-6 bg-slate-100 flex items-center justify-center space-x-8 text-slate-400">
             <div className="flex items-center space-x-1">
               <ShieldCheck size={16} />
-              <span className="text-xs">Secure {paymentGateway === 'cashfree' ? 'Cashfree' : 'Razorpay'} Payment</span>
+              <div className="flex flex-col">
+                <span className="text-xs">Secure {paymentGateway === 'cashfree' ? 'Cashfree' : 'Razorpay'} Payment</span>
+                {paymentGateway === 'cashfree' && !isCashfreeConfigured && (
+                  <span className="text-[10px] text-amber-600 font-medium">⚠️ Credentials missing</span>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-1">
               <Sparkles size={16} />

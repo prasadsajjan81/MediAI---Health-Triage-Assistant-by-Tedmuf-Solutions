@@ -7,30 +7,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const CFModule = await import("cashfree-pg");
-    const Cashfree = CFModule.Cashfree || (CFModule as any).default?.Cashfree;
-    const CFEnvironment = CFModule.CFEnvironment || (CFModule as any).default?.CFEnvironment;
+    const { Cashfree, CFEnvironment } = await import("cashfree-pg");
 
-    if (!Cashfree || !CFEnvironment) {
+    const appId = (process.env.CASHFREE_APP_ID || "").trim();
+    const secretKey = (process.env.CASHFREE_SECRET_KEY || "").trim();
+
+    if (!appId || !secretKey || appId === 'your_cashfree_app_id_here') {
       return res.status(500).json({
-        error: "Cashfree SDK failed to load properly",
-        moduleKeys: Object.keys(CFModule)
+        error: "Cashfree credentials not configured",
+        message: "Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY in your environment variables.",
+        instructions: {
+          vercel: "Go to Vercel Dashboard > Settings > Environment Variables and add CASHFREE_APP_ID and CASHFREE_SECRET_KEY.",
+          local: "Add these variables to your .env file."
+        }
       });
     }
 
-    const appId = process.env.CASHFREE_APP_ID;
-    const secretKey = process.env.CASHFREE_SECRET_KEY;
-    
-    if (!appId || !secretKey) {
-      return res.status(500).json({ error: "Cashfree credentials not configured" });
-    }
-    
-    // Initialize
+    // v5 SDK: set static properties, then instantiate
     Cashfree.XClientId = appId;
     Cashfree.XClientSecret = secretKey;
-    Cashfree.XEnvironment = process.env.CASHFREE_ENV === "PRODUCTION" 
-      ? CFEnvironment.PRODUCTION 
+    
+    // Auto-detect environment based on App ID prefix
+    const isProduction = process.env.CASHFREE_ENV === "PRODUCTION" && !appId.startsWith("TEST");
+    Cashfree.XEnvironment = isProduction
+      ? CFEnvironment.PRODUCTION
       : CFEnvironment.SANDBOX;
+
+    // Create an instance — PGCreateOrder is an instance method in v5
+    const cashfree = new Cashfree();
 
     const request = {
       order_amount: 1.00,
@@ -46,15 +50,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
-    
-    return res.status(200).json({ 
+    const response = await cashfree.PGCreateOrder("2023-08-01", request);
+
+    return res.status(200).json({
       status: "SUCCESS",
       order_id: response.data?.order_id,
       environment: process.env.CASHFREE_ENV || "SANDBOX (Default)"
     });
   } catch (error: any) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       status: "ERROR",
       error: error.message,
       stack: error.stack,
